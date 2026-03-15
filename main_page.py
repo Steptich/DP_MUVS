@@ -3,6 +3,5 @@ import pandas as pd
 import numpy as np
 import time
 
-st.header("Header placehodler")
+st.header("HANIČKA JE ŠIKULKA")
 
-st.subheader("Subheader placehodler")
