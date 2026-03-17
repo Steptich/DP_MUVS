@@ -22,7 +22,16 @@ tomorrow = today + dt.timedelta(days=1)
 last_year = today - dt.timedelta(days=365)
 formatted_tomorrow = f"{tomorrow.day} {tomorrow.strftime('%b, %Y')}"
 
+d = st.date_input(
+    "Select range for simulation:",
+    (last_year,today),
+    dt.datetime.strptime(HISTORICAL_START, "%d.%m.%Y"),
+    today,
+    format="MM.DD.YYYY",
+)
 
+start_date=d[0]
+end_date=d[1]
 
 BTFD_MIN =-75
 MAX_MULTIPLIER = 4
@@ -31,9 +40,6 @@ FEE_LIMIT=0.004
 FEE_MARKET = 0.006
 
 INVEST_PER_DAY = 70 #USD
-
-start_date='1 Jan, 2025'
-end_date='1 Jan, 2026'
 
 btc_full = tr.load_and_update_data(
     symbol=SYMBOL,
