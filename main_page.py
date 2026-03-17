@@ -33,19 +33,80 @@ d = st.date_input(
 start_date=d[0]
 end_date=d[1]
 
-btfdmin_slider = st.slider(
-    'Select a range of values',
-    10,90,75 #firt and second are min and max range, 3rd (,) is starting default range
-)
--btfdmin_slider
-BTFD_MIN = - btfdmin_slider
+# --- Inicializace session_state ---
+if "btfdmin_slider" not in st.session_state:
+    st.session_state.btfdmin_slider = 75  # default hodnota
 
-btfdMULTI_slider = st.slider(
-    'Select a range of values',
-    1.0,10.0,4.0 #firt and second are min and max range, 3rd (,) is starting default range
+if "btfdmin_number" not in st.session_state:
+    st.session_state.btfdmin_number = st.session_state.btfdmin_slider
+
+# --- Callback pro slider ---
+def min_slider_changed():
+    st.session_state.btfdmin_number = st.session_state.btfdmin_slider
+
+# --- Callback pro number input ---
+def min_number_changed():
+    st.session_state.btfdmin_slider = st.session_state.btfdmin_number
+
+# --- Number input ---
+st.number_input(
+    "Insert min value",
+    min_value=10,
+    max_value=90,
+    step=1,
+    key="btfdmin_number",
+    on_change=min_number_changed
 )
-btfdMULTI_slider
-MAX_MULTIPLIER = btfdMULTI_slider
+
+# --- Slider ---
+st.slider(
+    "Select min range value",
+    min_value=10,
+    max_value=90,
+    step=1,
+    key="btfdmin_slider",
+    on_change=min_slider_changed
+)
+
+BTFD_MIN = - st.session_state.btfdmin_slider
+
+
+# --- Inicializace session_state ---
+if "btfdMULTI_slider" not in st.session_state:
+    st.session_state.btfdMULTI_slider = 4.0  # default hodnota
+
+if "btfd" not in st.session_state:
+    st.session_state.btfd = st.session_state.btfdMULTI_slider
+
+# --- Callback pro slider ---
+def slider_changed():
+    st.session_state.btfd = st.session_state.btfdMULTI_slider
+
+# --- Callback pro number input ---
+def number_changed():
+    st.session_state.btfdMULTI_slider = st.session_state.btfd
+
+# --- Number input ---
+st.number_input(
+    "Insert a number",
+    min_value=1.0,
+    max_value=10.0,
+    step=0.1,
+    key="btfd",
+    on_change=number_changed
+)
+
+# --- Slider ---
+st.slider(
+    "Select a range of values",
+    min_value=1.0,
+    max_value=10.0,
+    step=0.1,
+    key="btfdMULTI_slider",
+    on_change=slider_changed
+)
+
+MAX_MULTIPLIER = st.session_state.btfdMULTI_slider
 
 FEE_LIMIT=0.004
 FEE_MARKET = 0.006
