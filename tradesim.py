@@ -1,10 +1,11 @@
 import pandas as pd
-from datetime import datetime, timedelta
+import streamlit as st
 from binance.client import Client
 import os
 
 
 # --- Funkce pro download ---
+@st.cache_data
 def download_binance_hourly_data(symbol, start, end):
     client = Client()
 
@@ -32,6 +33,7 @@ def download_binance_hourly_data(symbol, start, end):
     return df
 
 # --- 1. Načtení nebo stažení dat ---
+@st.cache_data
 def load_and_update_data(symbol, file_path, start, end):
     # --- 1. CSV existuje ---
     if os.path.exists(file_path):
@@ -75,6 +77,7 @@ def load_and_update_data(symbol, file_path, start, end):
 
     return df
 
+@st.cache_data
 def compute_initial_ath(btc_full, start_date, known_initial_ath):
     """
     Vrátí ATH před zadaným start_date.
