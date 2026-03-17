@@ -27,7 +27,7 @@ d = st.date_input(
     (last_year,today),
     dt.datetime.strptime(HISTORICAL_START, "%d.%m.%Y"),
     today,
-    format="MM.DD.YYYY",
+    format="DD.MM.YYYY",
 )
 
 start_date=d[0]
