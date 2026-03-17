@@ -33,8 +33,19 @@ d = st.date_input(
 start_date=d[0]
 end_date=d[1]
 
-BTFD_MIN =-75
-MAX_MULTIPLIER = 4
+btfdmin_slider = st.slider(
+    'Select a range of values',
+    10,90,75 #firt and second are min and max range, 3rd (,) is starting default range
+)
+-btfdmin_slider
+BTFD_MIN = - btfdmin_slider
+
+btfdMULTI_slider = st.slider(
+    'Select a range of values',
+    1.0,10.0,4.0 #firt and second are min and max range, 3rd (,) is starting default range
+)
+btfdMULTI_slider
+MAX_MULTIPLIER = btfdMULTI_slider
 
 FEE_LIMIT=0.004
 FEE_MARKET = 0.006
