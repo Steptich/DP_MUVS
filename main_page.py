@@ -21,117 +21,122 @@ today = dt.datetime.now()
 tomorrow = today + dt.timedelta(days=1)
 last_year = today - dt.timedelta(days=365)
 
+col1a, col2a = st.columns(2)
 
-# --- Inicializace ---
-if "start_date" not in st.session_state:
-    st.session_state.start_date = last_year
+with col1a:
+    # --- Inicializace ---
+    if "start_date" not in st.session_state:
+        st.session_state.start_date = last_year
+        # --- Inicializace ---
+    if "end_date" not in st.session_state:
+        st.session_state.end_date = tomorrow
+    # --- Callbacky ---
+    def on_start_change():
+        if st.session_state.start_date > st.session_state.end_date:
+            st.session_state.end_date = st.session_state.start_date
+    def on_end_change():
+        if st.session_state.end_date < st.session_state.start_date:
+            st.session_state.start_date = st.session_state.end_date
+    
+    # --- START DATE ---
+    st.date_input(
+        "Select start date for simulation:",
+        key="start_date",
+        min_value=HISTORICAL_START,
+        max_value=st.session_state.end_date,
+        format="DD.MM.YYYY",
+        on_change=on_start_change,      
+    )
 
-if "end_date" not in st.session_state:
-    st.session_state.end_date = tomorrow
+    # --- END DATE ---
+    st.date_input(
+        "Select end date for simulation:",
+        key="end_date",
+        min_value=st.session_state.start_date,
+        max_value=today,
+        format="DD.MM.YYYY",
+        on_change=on_end_change,
+    )
+    
+    # --- Inicializace session_state ---
+    if "btfdmin_slider" not in st.session_state:
+        st.session_state.btfdmin_slider = 75  # default hodnota
 
-# --- Callbacky ---
-def on_start_change():
-    if st.session_state.start_date > st.session_state.end_date:
-        st.session_state.end_date = st.session_state.start_date
+    if "btfdmin_number" not in st.session_state:
+        st.session_state.btfdmin_number = st.session_state.btfdmin_slider
 
-def on_end_change():
-    if st.session_state.end_date < st.session_state.start_date:
-        st.session_state.start_date = st.session_state.end_date
+    # --- Callback pro slider ---
+    def min_slider_changed():
+        st.session_state.btfdmin_number = st.session_state.btfdmin_slider
 
-# --- START DATE ---
-st.date_input(
-    "Select start date for simulation:",
-    key="start_date",
-    min_value=HISTORICAL_START,
-    max_value=st.session_state.end_date,
-    format="DD.MM.YYYY",
-    on_change=on_start_change,
-)
+    # --- Callback pro number input ---
+    def min_number_changed():
+        st.session_state.btfdmin_slider = st.session_state.btfdmin_number
 
-# --- END DATE ---
-st.date_input(
-    "Select end date for simulation:",
-    key="end_date",
-    min_value=st.session_state.start_date,
-    max_value=today,
-    format="DD.MM.YYYY",
-    on_change=on_end_change,
-)
+    # --- Number input ---
+    st.number_input(
+        "Insert min value",
+        min_value=10,
+        max_value=90,
+        step=1,
+        key="btfdmin_number",
+        on_change=min_number_changed
+    )
 
-# --- Inicializace session_state ---
-if "btfdmin_slider" not in st.session_state:
-    st.session_state.btfdmin_slider = 75  # default hodnota
+    # --- Slider ---
+    st.slider(
+        "Select min range value",
+        min_value=10,
+        max_value=90,
+        step=1,
+        key="btfdmin_slider",
+        on_change=min_slider_changed
+    )
 
-if "btfdmin_number" not in st.session_state:
-    st.session_state.btfdmin_number = st.session_state.btfdmin_slider
-
-# --- Callback pro slider ---
-def min_slider_changed():
-    st.session_state.btfdmin_number = st.session_state.btfdmin_slider
-
-# --- Callback pro number input ---
-def min_number_changed():
-    st.session_state.btfdmin_slider = st.session_state.btfdmin_number
-
-# --- Number input ---
-st.number_input(
-    "Insert min value",
-    min_value=10,
-    max_value=90,
-    step=1,
-    key="btfdmin_number",
-    on_change=min_number_changed
-)
-
-# --- Slider ---
-st.slider(
-    "Select min range value",
-    min_value=10,
-    max_value=90,
-    step=1,
-    key="btfdmin_slider",
-    on_change=min_slider_changed
-)
-
-BTFD_MIN = - st.session_state.btfdmin_slider
+    BTFD_MIN = - st.session_state.btfdmin_slider
 
 
-# --- Inicializace session_state ---
-if "btfdMULTI_slider" not in st.session_state:
-    st.session_state.btfdMULTI_slider = 4.0  # default hodnota
+    # --- Inicializace session_state ---
+    if "btfdMULTI_slider" not in st.session_state:
+        st.session_state.btfdMULTI_slider = 4.0  # default hodnota
 
-if "btfd_number" not in st.session_state:
-    st.session_state.btfd_number = st.session_state.btfdMULTI_slider
+    if "btfd_number" not in st.session_state:
+        st.session_state.btfd_number = st.session_state.btfdMULTI_slider
 
-# --- Callback pro slider ---
-def slider_changed():
-    st.session_state.btfd_number = st.session_state.btfdMULTI_slider
+    # --- Callback pro slider ---
+    def slider_changed():
+        st.session_state.btfd_number = st.session_state.btfdMULTI_slider
 
-# --- Callback pro number input ---
-def number_changed():
-    st.session_state.btfdMULTI_slider = st.session_state.btfd_number
+    # --- Callback pro number input ---
+    def number_changed():
+        st.session_state.btfdMULTI_slider = st.session_state.btfd_number
 
-# --- Number input ---
-st.number_input(
-    "Insert a number",
-    min_value=1.0,
-    max_value=10.0,
-    step=0.1,
-    key="btfd_number",
-    on_change=number_changed
-)
+    # --- Number input ---
+    st.number_input(
+        "Insert a number",
+        min_value=1.0,
+        max_value=10.0,
+        step=0.1,
+        key="btfd_number",
+        on_change=number_changed
+    )
 
-# --- Slider ---
-st.slider(
-    "Select a range of values",
-    min_value=1.0,
-    max_value=10.0,
-    step=0.1,
-    key="btfdMULTI_slider",
-    on_change=slider_changed
-)
+    # --- Slider ---
+    st.slider(
+        "Select a range of values",
+        min_value=1.0,
+        max_value=10.0,
+        step=0.1,
+        key="btfdMULTI_slider",
+        on_change=slider_changed
+    )
 
-MAX_MULTIPLIER = st.session_state.btfdMULTI_slider
+    MAX_MULTIPLIER = st.session_state.btfdMULTI_slider
+
+with col2a:
+    "dummy text"
+
+
 
 FEE_LIMIT=0.004
 FEE_MARKET = 0.006
