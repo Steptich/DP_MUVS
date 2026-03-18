@@ -14,24 +14,29 @@ st.header("HANIČKA JE ŠIKULKA")
 # --- Nastavení ---
 SYMBOL = "BTCUSDT"
 DATA_FILE = f"{SYMBOL}_full.csv"
-HISTORICAL_START = "01.01.2018"
+HISTORICAL_START = "2018-01-01"
 HOUR = 8
 known_initial_ath=20089.0 #USD
 today = dt.datetime.now()
 tomorrow = today + dt.timedelta(days=1)
 last_year = today - dt.timedelta(days=365)
-formatted_tomorrow = f"{tomorrow.day} {tomorrow.strftime('%b, %Y')}"
 
-d = st.date_input(
-    "Select range for simulation:",
-    (last_year,today),
-    dt.datetime.strptime(HISTORICAL_START, "%d.%m.%Y"),
-    today,
+
+start_date = st.date_input(
+    "Select start date for simulation:",
+    last_year,
+    min_value =HISTORICAL_START,
+    max_value=today,
     format="DD.MM.YYYY",
 )
 
-start_date=d[0]
-end_date=d[1]
+end_date = st.date_input(
+    "Select end date for simulation:",
+    today,
+    min_value =HISTORICAL_START,
+    max_value=today,
+    format="DD.MM.YYYY",
+)
 
 # --- Inicializace session_state ---
 if "btfdmin_slider" not in st.session_state:
@@ -117,7 +122,7 @@ btc_full = tr.load_and_update_data(
     symbol=SYMBOL,
     file_path=DATA_FILE,
     start=HISTORICAL_START,
-    end=formatted_tomorrow
+    end=tomorrow
 )
 print("Data uložena do CSV")
 
