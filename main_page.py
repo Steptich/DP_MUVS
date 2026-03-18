@@ -136,8 +136,6 @@ with col1a:
 with col2a:
     "dummy text"
 
-
-
 FEE_LIMIT=0.004
 FEE_MARKET = 0.006
 
@@ -147,7 +145,7 @@ btc_full = tr.load_and_update_data(
     symbol=SYMBOL,
     file_path=DATA_FILE,
     start=HISTORICAL_START,
-    end=tomorrow
+    end=tomorrow.strftime("%d %b, %Y")
 )
 print("Data uložena do CSV")
 
