@@ -22,20 +22,40 @@ tomorrow = today + dt.timedelta(days=1)
 last_year = today - dt.timedelta(days=365)
 
 
-start_date = st.date_input(
+# --- Inicializace ---
+if "start_date" not in st.session_state:
+    st.session_state.start_date = last_year
+
+if "end_date" not in st.session_state:
+    st.session_state.end_date = tomorrow
+
+# --- Callbacky ---
+def on_start_change():
+    if st.session_state.start_date > st.session_state.end_date:
+        st.session_state.end_date = st.session_state.start_date
+
+def on_end_change():
+    if st.session_state.end_date < st.session_state.start_date:
+        st.session_state.start_date = st.session_state.end_date
+
+# --- START DATE ---
+st.date_input(
     "Select start date for simulation:",
-    last_year,
-    min_value =HISTORICAL_START,
-    max_value=today,
+    key="start_date",
+    min_value=HISTORICAL_START,
+    max_value=st.session_state.end_date,
     format="DD.MM.YYYY",
+    on_change=on_start_change,
 )
 
-end_date = st.date_input(
+# --- END DATE ---
+st.date_input(
     "Select end date for simulation:",
-    today,
-    min_value =HISTORICAL_START,
+    key="end_date",
+    min_value=st.session_state.start_date,
     max_value=today,
     format="DD.MM.YYYY",
+    on_change=on_end_change,
 )
 
 # --- Inicializace session_state ---
@@ -128,15 +148,15 @@ print("Data uložena do CSV")
 
 initial_ath = tr.compute_initial_ath(
     btc_full=btc_full,
-    start_date=start_date,
+    start_date=st.session_state.start_date,
     known_initial_ath=known_initial_ath
 )
-print(f"Dosavaď dosažené ATH před {start_date}: {initial_ath}")
+print(f"Dosavaď dosažené ATH před {st.session_state.start_date}: {initial_ath}")
 
 # --- 3. Ořez datasetu pro simulaci ---
 btc = btc_full[
-    (btc_full['Datetime'] >= pd.to_datetime(start_date)) &
-    (btc_full['Datetime'] <= pd.to_datetime(end_date))
+    (btc_full['Datetime'] >= pd.to_datetime(st.session_state.start_date)) &
+    (btc_full['Datetime'] <= pd.to_datetime(st.session_state.end_date))
 ].reset_index(drop=True)
 
 print(f"Počet záznamů pro simulaci: {len(btc)}")
