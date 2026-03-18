@@ -1,6 +1,7 @@
-streamlit
-python-binance
-pandas
-numpy
-os
-datetime
+binance==0.3.109
+cryptography==46.0.5
+numpy==2.2.6
+pandas==2.3.3
+python_binance==1.0.35
+streamlit==1.55.0
+DateTime==6.0
