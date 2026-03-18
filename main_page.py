@@ -100,16 +100,16 @@ BTFD_MIN = - st.session_state.btfdmin_slider
 if "btfdMULTI_slider" not in st.session_state:
     st.session_state.btfdMULTI_slider = 4.0  # default hodnota
 
-if "btfd" not in st.session_state:
-    st.session_state.btfd = st.session_state.btfdMULTI_slider
+if "btfd_number" not in st.session_state:
+    st.session_state.btfd_number = st.session_state.btfdMULTI_slider
 
 # --- Callback pro slider ---
 def slider_changed():
-    st.session_state.btfd = st.session_state.btfdMULTI_slider
+    st.session_state.btfd_number = st.session_state.btfdMULTI_slider
 
 # --- Callback pro number input ---
 def number_changed():
-    st.session_state.btfdMULTI_slider = st.session_state.btfd
+    st.session_state.btfdMULTI_slider = st.session_state.btfd_number
 
 # --- Number input ---
 st.number_input(
@@ -117,7 +117,7 @@ st.number_input(
     min_value=1.0,
     max_value=10.0,
     step=0.1,
-    key="btfd",
+    key="btfd_number",
     on_change=number_changed
 )
 
