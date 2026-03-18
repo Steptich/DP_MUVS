@@ -29,7 +29,7 @@ with col1a:
         st.session_state.start_date = last_year
         # --- Inicializace ---
     if "end_date" not in st.session_state:
-        st.session_state.end_date = tomorrow
+        st.session_state.end_date = today
     # --- Callbacky ---
     def on_start_change():
         if st.session_state.start_date > st.session_state.end_date:
