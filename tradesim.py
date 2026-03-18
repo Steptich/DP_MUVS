@@ -44,10 +44,10 @@ def load_and_update_data(symbol, file_path, start, end):
         print(f"Poslední datum v CSV: {last_dt}")
 
         # --- 2. Update pokud chybí data ---
-        if end > last_dt:
+        if end > last_dt.strftime("%d %b, %Y"):
             print("Stahuji nová data...")
             # malý overlap kvůli bezpečnosti
-            update_start = (last_dt - pd.Timedelta(hours=2))
+            update_start = (last_dt - pd.Timedelta(hours=2)).strftime("%d %b, %Y")
             df_new = download_binance_hourly_data(
                 symbol=symbol,
                 start=update_start,
