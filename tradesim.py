@@ -42,26 +42,26 @@ def load_and_update_data(symbol, file_path, start, end):
 
         last_dt = df['Datetime'].max()
         print(f"Poslední datum v CSV: {last_dt}")
+
         # --- 2. Update pokud chybí data ---
-        print("Stahuji nová data...")
+        if end > last_dt:
+            print("Stahuji nová data...")
+            # malý overlap kvůli bezpečnosti
+            update_start = (last_dt - pd.Timedelta(hours=2))
+            df_new = download_binance_hourly_data(
+                symbol=symbol,
+                start=update_start,
+                end=end
+            )
 
-        # malý overlap kvůli bezpečnosti
-        update_start = (last_dt - pd.Timedelta(hours=2)).strftime("%d %b, %Y")
+            # --- 3. Sloučení + deduplikace ---
+            df = pd.concat([df, df_new])
+            df = df.drop_duplicates(subset='Datetime')
+            df = df.sort_values('Datetime').reset_index(drop=True)
 
-        df_new = download_binance_hourly_data(
-            symbol=symbol,
-            start=update_start,
-            end=end
-        )
-
-        # --- 3. Sloučení + deduplikace ---
-        df = pd.concat([df, df_new])
-        df = df.drop_duplicates(subset='Datetime')
-        df = df.sort_values('Datetime').reset_index(drop=True)
-
-        # --- 4. Uložení ---
-        df.to_csv(file_path, sep=";", index=False)
-        print("CSV aktualizováno")
+            # --- 4. Uložení ---
+            df.to_csv(file_path, sep=";", index=False)
+            print("CSV aktualizováno")
 
     # --- 5. CSV neexistuje → full download ---
     else:
