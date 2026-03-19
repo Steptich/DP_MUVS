@@ -115,6 +115,7 @@ with col1a:
         min_value=1.0,
         max_value=10.0,
         step=0.1,
+        format="%0.1f",
         key="btfd_number",
         on_change=number_changed
     )
@@ -125,6 +126,7 @@ with col1a:
         min_value=1.0,
         max_value=10.0,
         step=0.1,
+        format="%0.1f",
         key="btfdMULTI_slider",
         on_change=slider_changed
     )
