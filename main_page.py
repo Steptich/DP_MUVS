@@ -136,8 +136,85 @@ with col1a:
 with col2a:
     "dummy text"
 
-FEE_LIMIT=0.004
-FEE_MARKET = 0.006
+# --- Inicializace session_state pro fee_limit ---
+if "fee_limit_slider" not in st.session_state:
+    st.session_state.fee_limit_slider = 0.4  # výchozí hodnota 0.4 %
+
+if "fee_limit_number" not in st.session_state:
+    st.session_state.fee_limit_number = st.session_state.fee_limit_slider
+
+# --- Callback pro slider fee_limit ---
+def fee_limit_slider_changed():
+    st.session_state.fee_limit_number = st.session_state.fee_limit_slider
+
+# --- Callback pro number input fee_limit ---
+def fee_limit_number_changed():
+    st.session_state.fee_limit_slider = st.session_state.fee_limit_number
+
+# --- Number input fee_limit ---
+st.number_input(
+    "Fee Limit (%)",
+    min_value=0.0,
+    max_value=1.0,
+    step=0.01,
+    format="%0.2f",
+    key="fee_limit_number",
+    on_change=fee_limit_number_changed
+)
+
+# --- Slider fee_limit ---
+st.slider(
+    "Select Fee Limit (%)",
+    min_value=0.0,
+    max_value=1.0,
+    step=0.01,
+    format="%0.2f",
+    key="fee_limit_slider",
+    on_change=fee_limit_slider_changed
+)
+
+FEE_LIMIT = st.session_state.fee_limit_slider /100
+
+
+# --- Inicializace session_state pro fee_market ---
+if "fee_market_slider" not in st.session_state:
+    st.session_state.fee_market_slider = 0.6  # výchozí hodnota 0.6 %
+
+if "fee_market_number" not in st.session_state:
+    st.session_state.fee_market_number = st.session_state.fee_market_slider
+
+# --- Callback pro slider fee_market ---
+def fee_market_slider_changed():
+    st.session_state.fee_market_number = st.session_state.fee_market_slider
+
+# --- Callback pro number input fee_market ---
+def fee_market_number_changed():
+    st.session_state.fee_market_slider = st.session_state.fee_market_number
+
+# --- Number input fee_market ---
+st.number_input(
+    "Fee Market (%)",
+    min_value=0.0,
+    max_value=1.0,
+    step=0.01,
+    format="%0.2f",
+    key="fee_market_number",
+    on_change=fee_market_number_changed
+)
+
+# --- Slider fee_market ---
+st.slider(
+    "Select Fee Market (%)",
+    min_value=0.0,
+    max_value=1.0,
+    step=0.01,
+    format="%0.2f",
+    key="fee_market_slider",
+    on_change=fee_market_slider_changed
+)
+
+FEE_MARKET = st.session_state.fee_market_slider / 100
+
 
 INVEST_PER_DAY = 70 #USD
 
