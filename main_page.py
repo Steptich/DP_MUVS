@@ -215,8 +215,23 @@ st.slider(
 
 FEE_MARKET = st.session_state.fee_market_slider / 100
 
+# --- Inicializace session_state pro fee_market ---
+if "investment_number" not in st.session_state:
+    st.session_state.investment_number = 100
 
-INVEST_PER_DAY = 70 #USD
+
+# --- Number input fee_market ---
+st.number_input(
+    "Investment (USD)",
+    min_value=0,
+    max_value=10000,
+    step=10,
+    #format="%0.2f",
+    key="investment_number",
+)
+INVEST_PER_DAY = st.session_state.investment_number
+
+st.write(today.strftime("%d %b, %Y"))
 
 btc_full = tr.load_and_update_data(
     symbol=SYMBOL,
