@@ -120,6 +120,7 @@ def compute_initial_ath(btc_full, start_date, known_initial_ath):
     return known_initial_ath
 
 # ==== 2. Funkce pro získání referenčních časů každý den ve stejnou hodinu ====
+@st.cache_data
 def get_reference_times(df, hour):
     df['Date'] = df['Datetime'].dt.date
     df['Hour'] = df['Datetime'].dt.hour
@@ -136,6 +137,7 @@ def get_btfd_multiplier(btfd_percent: float, btfd_min: float, max_multiplier: fl
         scale = (btfd_percent - 0) / (btfd_min - 0)
         return 1.0 + scale * (max_multiplier - 1.0)
 
+@st.cache_data
 def simulate_day_hourly(data, start_idx, weights, market_buy_for, invest_per_day,current_ath,limit_levels,btfd_index_series,btfd_min,max_multiplier,fee_limit=0.004,fee_market = 0.006):
     ref_price = data.iloc[start_idx]['Open']
     start_time = data.iloc[start_idx]['Datetime']
