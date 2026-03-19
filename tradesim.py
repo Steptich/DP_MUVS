@@ -5,7 +5,7 @@ import os
 
 # detekce Streamlit Cloud
 def is_cloud():
-    return os.environ.get("STREAMLIT_RUNTIME") == "cloud"
+    return os.environ.get("HOSTNAME") == "streamlit"
 
 # --- Funkce pro download ---
 @st.cache_data

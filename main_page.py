@@ -4,12 +4,8 @@ import tradesim as tr
 import pandas as pd
 import numpy as np
 from itertools import combinations
-import time
-import os
 
 st.header("HANIČKA JE ŠIKULKA")
-
-st.write(dict(os.environ))
 
 
 
