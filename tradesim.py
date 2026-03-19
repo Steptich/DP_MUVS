@@ -3,6 +3,9 @@ import streamlit as st
 from binance.client import Client
 import os
 
+# detekce Streamlit Cloud
+def is_cloud():
+    return os.environ.get("HOSTNAME") == "streamlit"
 
 # --- Funkce pro download ---
 @st.cache_data
@@ -34,7 +37,19 @@ def download_binance_hourly_data(symbol, start, end):
 
 # --- 1. Načtení nebo stažení dat ---
 @st.cache_data
-def load_and_update_data(symbol, file_path, start, end):
+def load_and_update_data(symbol, file_path, start, end, cloud_flag):
+    
+    # --- CLOUD: pouze načti CSV ---
+    if cloud_flag:
+        if not os.path.exists(file_path):
+            raise FileNotFoundError(
+                "CSV soubor na serveru neexistuje. Nahraj ho do repozitáře."
+            )
+
+        print("CLOUD režim: načítám pouze CSV")
+        df = pd.read_csv(file_path, sep=";", parse_dates=['Datetime'])
+        return df
+    
     # --- 1. CSV existuje ---
     if os.path.exists(file_path):
         print("Načítám existující CSV...")

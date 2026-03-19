@@ -4,10 +4,8 @@ import tradesim as tr
 import pandas as pd
 import numpy as np
 from itertools import combinations
-import time
 
 st.header("HANIČKA JE ŠIKULKA")
-
 
 
 
@@ -117,6 +115,7 @@ with col1a:
         min_value=1.0,
         max_value=10.0,
         step=0.1,
+        format="%0.1f",
         key="btfd_number",
         on_change=number_changed
     )
@@ -127,6 +126,7 @@ with col1a:
         min_value=1.0,
         max_value=10.0,
         step=0.1,
+        format="%0.1f",
         key="btfdMULTI_slider",
         on_change=slider_changed
     )
@@ -145,7 +145,8 @@ btc_full = tr.load_and_update_data(
     symbol=SYMBOL,
     file_path=DATA_FILE,
     start=HISTORICAL_START,
-    end=tomorrow.strftime("%d %b, %Y")
+    end=tomorrow.strftime("%d %b, %Y"),
+    cloud_flag=tr.is_cloud()
 )
 print("Data uložena do CSV")
 
