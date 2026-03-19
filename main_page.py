@@ -145,7 +145,8 @@ btc_full = tr.load_and_update_data(
     symbol=SYMBOL,
     file_path=DATA_FILE,
     start=HISTORICAL_START,
-    end=tomorrow.strftime("%d %b, %Y")
+    end=tomorrow.strftime("%d %b, %Y"),
+    cloud_flag=tr.is_cloud()
 )
 print("Data uložena do CSV")
 
