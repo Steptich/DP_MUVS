@@ -1,4 +1,7 @@
 import streamlit as st
+from theme import theme_button
+
+theme_button()  
 
 # Define the pages
 main_page = st.Page("main_page.py", title="Úvodní stránka", icon="🎈")
