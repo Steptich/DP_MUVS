@@ -12,10 +12,10 @@ st.header("HANIČKA JE ŠIKULKA")
 # --- Nastavení ---
 SYMBOL = "BTCUSDT"
 DATA_FILE = f"{SYMBOL}_full.csv"
-HISTORICAL_START = "2018-01-01"
+HISTORICAL_START = dt.datetime.strptime("2018-01-01", "%Y-%m-%d")
 HOUR = 8
 known_initial_ath=20089.0 #USD
-today = dt.datetime.now()
+today = dt.datetime.now().replace(minute=0, second=0, microsecond=0)
 tomorrow = today + dt.timedelta(days=1)
 last_year = today - dt.timedelta(days=365)
 

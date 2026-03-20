@@ -1,6 +1,7 @@
 import pandas as pd
 import streamlit as st
 from binance.client import Client
+from datetime import timezone
 import os
 import socket
 
@@ -23,7 +24,11 @@ def is_connected():
 def download_binance_hourly_data(symbol, start, end):
     client = Client()
 
-    klines = client.get_historical_klines(symbol, Client.KLINE_INTERVAL_1HOUR, start, end)
+    # --- převod datetime -> timestamp v milisekundách (UTC!) ---
+    start_ts = int(start.replace(tzinfo=timezone.utc).timestamp() * 1000)
+    end_ts = int(end.replace(tzinfo=timezone.utc).timestamp() * 1000)
+
+    klines = client.get_historical_klines(symbol, Client.KLINE_INTERVAL_1HOUR, start_ts, end_ts)
 
     df = pd.DataFrame(klines, columns=[
         'Datetime', 'Open', 'High', 'Low', 'Close', 'Volume',
@@ -72,10 +77,10 @@ def load_and_update_data(symbol, file_path, start, end, cloud_flag):
            print(f"Poslední datum v CSV: {last_dt}")
 
            # --- 2. Update pokud chybí data ---
-           if end > last_dt.strftime("%d %b, %Y"):
+           if end > last_dt:
                print("Stahuji nová data...")
                # malý overlap kvůli bezpečnosti
-               update_start = (last_dt - pd.Timedelta(hours=2)).strftime("%d %b, %Y")
+               update_start = (last_dt - pd.Timedelta(hours=2))
                df_new = download_binance_hourly_data(
                    symbol=symbol,
                    start=update_start,
