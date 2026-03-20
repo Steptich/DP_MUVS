@@ -37,7 +37,7 @@ def theme_button():
     if ms.themes["current_theme"] is None:
         ms.themes["current_theme"] = "light"
 
-        tdict = ms.themes["light"]
+        tdict = ms.themes["dark"]
         for vkey, vval in tdict.items():
             if vkey.startswith("theme"):
                 st._config.set_option(vkey, vval)
