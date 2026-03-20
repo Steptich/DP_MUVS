@@ -2,10 +2,21 @@ import pandas as pd
 import streamlit as st
 from binance.client import Client
 import os
+import socket
 
 # detekce Streamlit Cloud
 def is_cloud():
     return os.environ.get("HOSTNAME") == "streamlit"
+
+#detekce připojení k internetu
+def is_connected():
+    try:
+        # Try to connect to Google's DNS server
+        socket.create_connection(("8.8.8.8", 53), timeout=3)
+        return True
+    except OSError:
+        pass
+    return False
 
 # --- Funkce pro download ---
 @st.cache_data
@@ -50,47 +61,56 @@ def load_and_update_data(symbol, file_path, start, end, cloud_flag):
         df = pd.read_csv(file_path, sep=";", parse_dates=['Datetime'])
         return df
     
-    # --- 1. CSV existuje ---
-    if os.path.exists(file_path):
-        print("Načítám existující CSV...")
-        df = pd.read_csv(file_path, sep=";", parse_dates=['Datetime'])
+    if is_connected():
+        
+       # --- 1. CSV existuje ---
+       if os.path.exists(file_path):
+           print("Načítám existující CSV...")
+           df = pd.read_csv(file_path, sep=";", parse_dates=['Datetime'])
 
-        last_dt = df['Datetime'].max()
-        print(f"Poslední datum v CSV: {last_dt}")
+           last_dt = df['Datetime'].max()
+           print(f"Poslední datum v CSV: {last_dt}")
 
-        # --- 2. Update pokud chybí data ---
-        if end > last_dt.strftime("%d %b, %Y"):
-            print("Stahuji nová data...")
-            # malý overlap kvůli bezpečnosti
-            update_start = (last_dt - pd.Timedelta(hours=2)).strftime("%d %b, %Y")
-            df_new = download_binance_hourly_data(
-                symbol=symbol,
-                start=update_start,
-                end=end
-            )
+           # --- 2. Update pokud chybí data ---
+           if end > last_dt.strftime("%d %b, %Y"):
+               print("Stahuji nová data...")
+               # malý overlap kvůli bezpečnosti
+               update_start = (last_dt - pd.Timedelta(hours=2)).strftime("%d %b, %Y")
+               df_new = download_binance_hourly_data(
+                   symbol=symbol,
+                   start=update_start,
+                   end=end
+               )
 
-            # --- 3. Sloučení + deduplikace ---
-            df = pd.concat([df, df_new])
-            df = df.drop_duplicates(subset='Datetime')
-            df = df.sort_values('Datetime').reset_index(drop=True)
+               # --- 3. Sloučení + deduplikace ---
+               df = pd.concat([df, df_new])
+               df = df.drop_duplicates(subset='Datetime')
+               df = df.sort_values('Datetime').reset_index(drop=True)
 
-            # --- 4. Uložení ---
-            df.to_csv(file_path, sep=";", index=False)
-            print("CSV aktualizováno")
+               # --- 4. Uložení ---
+               df.to_csv(file_path, sep=";", index=False)
+               print("CSV aktualizováno")
 
-    # --- 5. CSV neexistuje → full download ---
+       # --- 5. CSV neexistuje → full download ---
+       else:
+           print("CSV neexistuje → stahuji celou historii")
+
+           df = download_binance_hourly_data(
+               symbol=symbol,
+               start=start,
+               end=end
+           )
+
+           df.to_csv(file_path, sep=";", index=False)
+
+       return df
     else:
-        print("CSV neexistuje → stahuji celou historii")
-
-        df = download_binance_hourly_data(
-            symbol=symbol,
-            start=start,
-            end=end
-        )
-
-        df.to_csv(file_path, sep=";", index=False)
-
-    return df
+        if os.path.exists(file_path):
+            print("Offline režim: načítám uložené CSV")
+            df = pd.read_csv(file_path, sep=";", parse_dates=['Datetime'])
+            return df
+        else:
+            raise   FileNotFoundError("CSV soubor neexistuje a není připojení k internetu.")
 
 @st.cache_data
 def compute_initial_ath(btc_full, start_date, known_initial_ath):
