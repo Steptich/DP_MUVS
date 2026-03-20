@@ -271,7 +271,7 @@ weight_sets = [
 
 results = []
 last_price = btc.iloc[-1]['Close']
-ref_times = tr.get_reference_times(btc, hour=8)
+ref_times = tr.get_reference_times(btc, hour=HOUR)
 
 for i, weights in enumerate(weight_sets):
     print(f"\nTestuji váhovou sadu {i + 1}/{len(weight_sets)}: {weights}")
