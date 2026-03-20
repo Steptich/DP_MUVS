@@ -16,18 +16,30 @@ HISTORICAL_START = dt.datetime.strptime("2018-01-01", "%Y-%m-%d")
 HOUR = 8
 known_initial_ath=20089.0 #USD
 today = dt.datetime.now().replace(minute=0, second=0, microsecond=0)
-tomorrow = today + dt.timedelta(days=1)
-last_year = today - dt.timedelta(days=365)
+
+btc_full = tr.load_and_update_data(
+    symbol=SYMBOL,
+    file_path=DATA_FILE,
+    start=HISTORICAL_START,
+    end=today,
+    cloud_flag=tr.is_cloud()
+)
+
+print("Data načtena")
+
+last_dt = btc_full['Datetime'].max()
+year_before = last_dt - dt.timedelta(days=365)
+
+
 
 col1a, col2a = st.columns(2)
 
 with col1a:
     # --- Inicializace ---
     if "start_date" not in st.session_state:
-        st.session_state.start_date = last_year
-        # --- Inicializace ---
+        st.session_state.start_date = year_before
     if "end_date" not in st.session_state:
-        st.session_state.end_date = today
+        st.session_state.end_date = last_dt
     # --- Callbacky ---
     def on_start_change():
         if st.session_state.start_date > st.session_state.end_date:
@@ -51,7 +63,7 @@ with col1a:
         "Select end date for simulation:",
         key="end_date",
         min_value=st.session_state.start_date,
-        max_value=today,
+        max_value=last_dt,
         format="DD.MM.YYYY",
         on_change=on_end_change,
     )
@@ -230,17 +242,6 @@ st.number_input(
     key="investment_number",
 )
 INVEST_PER_DAY = st.session_state.investment_number
-
-st.write(today.strftime("%d %b, %Y"))
-
-btc_full = tr.load_and_update_data(
-    symbol=SYMBOL,
-    file_path=DATA_FILE,
-    start=HISTORICAL_START,
-    end=tomorrow.strftime("%d %b, %Y"),
-    cloud_flag=tr.is_cloud()
-)
-print("Data uložena do CSV")
 
 initial_ath = tr.compute_initial_ath(
     btc_full=btc_full,
