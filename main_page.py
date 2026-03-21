@@ -17,14 +17,17 @@ HOUR = 8
 known_initial_ath=20089.0 #USD
 today = dt.datetime.now().replace(minute=0, second=0, microsecond=0)
 
-btc_full = tr.load_and_update_data(
-    symbol=SYMBOL,
-    file_path=DATA_FILE,
-    start=HISTORICAL_START,
-    end=today,
-    cloud_flag=tr.is_cloud()
-)
-
+# --- Načtení dat s cache a po hodine znova---
+@st.cache_data(show_spinner=True,ttl=3600)
+def load_btc_data():
+    return tr.load_and_update_data(
+        symbol=SYMBOL,
+        file_path=DATA_FILE,
+        start=HISTORICAL_START,
+        end=today,
+        cloud_flag=tr.is_cloud()
+    )
+btc_full = load_btc_data()
 print("Data načtena")
 
 last_dt = btc_full['Datetime'].max()
