@@ -411,86 +411,84 @@ results = run_backtest()
 
 print(f"Počet výsledků: {len(results)}")
 
-# ==== 6. Výpis TOP 3 podle průměrné ceny ====
-top3_price = sorted(results, key=lambda x: x['avg_price'])[:5]
+#📊 OUTPUT
+#=========================
+#==== 1. TOP podle průměrné ceny ====
+top_price = sorted(results, key=lambda x: x['avg_price'])[:5]
 
-print("\n📊 TOP 3 strategií podle průměrné nákupní ceny (s průměrným % naplnění limitů):")
-for i, r in enumerate(top3_price, 1):
-    w = [round(x, 3) for x in r['weights']]
-    mb = sorted(r['market_buy_for'])
+print("\n📊 TOP 5 strategií podle průměrné nákupní ceny:")
+for i, r in enumerate(top_price, 1):
     fills = {k: round(v * 100, 1) for k, v in r['avg_fill_rate'].items()}
-    print(f"{i}. Váhy: {w}, Tržní nákup: {mb}")
+
+    print(f"{i}. Váhy: {list(r['weights'])}, Tržní nákup: {list(r['market_buy_for'])}")
     print(f"   Průměrná cena: {r['avg_price']:.2f} USD")
     print(f"   Celkové BTC: {r['total_btc']:.6f}")
     print(f"   Celkově vložený kapitál: {r['total_cost']:.2f} USD")
     print(f"   Počet dnů: {r['days']}")
-    print(f"   Celkový zisk: {(r['total_profit'] if 'total_profit' in r else 0):.2f} USD")
-    print(f"   Návratnost investice (ROI): {(r['ROI'] if 'ROI' in r else 0):.2f} %")
-    print(f"   Roční zhodnocení (ROI p.a.): {(r['ROI_pa'] if 'ROI_pa' in r else 0):.2f} %")
-    print(f"   Efektivní využití kapitálu: {(r['efficiency'] if 'efficiency' in r else 0):.2f} %")
-    print(f"   Neinvestovaná  částka: {(r[' uninvested_amount'] if ' uninvested_amount' in r else 0):.2f} USD")
-    print(f"   Celkový kapitál: {(r['total_amount'] if 'total_amount' in r else 0):.2f} USD")
-    print(f"   Průměrné naplnění limitů (% z dnů): {fills}")
-    print(f"   Procento investic přes limitní nákupy: {r['percent_limit_invest']:.1f} %")
-    print(f"   Procento investic přes tržní nákupy: {r['percent_market_invest']:.1f} %")
-    print(f"   Tržní pokrytí (váha): {r['sum_market_weights']:.2f}\n")
+    print(f"   Celkový zisk: {r['total_profit']:.2f} USD")
+    print(f"   ROI: {r['ROI']:.2f} %")
+    print(f"   ROI p.a.: {r['ROI_pa']:.2f} %")
+    print(f"   Efektivita: {r['efficiency']:.2f} %")
+    print(f"   Neinvestováno: {r['uninvested_amount']:.2f} USD")
+    print(f"   Celkem: {r['total_amount']:.2f} USD")
+    print(f"   Fill rate: {fills}")
+    print(f"   Limit %: {r['percent_limit_invest']:.1f} %")
+    print(f"   Market %: {r['percent_market_invest']:.1f} %\n")
 
-# ==== 7. Výpis TOP 3 podle nejvyššího množství BTC ====
-top3_btc = sorted(results, key=lambda x: x['total_btc'], reverse=True)[:5]
 
-print("\n📊 TOP 3 strategií podle nejvyššího množství nakoupeného BTC (s průměrnou nákupní cenou):")
-for i, r in enumerate(top3_btc, 1):
-    w = [round(x, 3) for x in r['weights']]
-    mb = sorted(r['market_buy_for'])
+# ==== 2. TOP podle BTC ====
+top_btc = sorted(results, key=lambda x: x['total_btc'], reverse=True)[:5]
+
+print("\n📊 TOP 5 strategií podle množství BTC:")
+for i, r in enumerate(top_btc, 1):
     fills = {k: round(v * 100, 1) for k, v in r['avg_fill_rate'].items()}
-    print(f"{i}. Váhy: {w}, Tržní nákup: {mb}")
+
+    print(f"{i}. Váhy: {list(r['weights'])}, Tržní nákup: {list(r['market_buy_for'])}")
+    print(f"   BTC: {r['total_btc']:.6f}")
     print(f"   Průměrná cena: {r['avg_price']:.2f} USD")
-    print(f"   Celkové BTC: {r['total_btc']:.6f}")
-    print(f"   Celkově vložený kapitál: {r['total_cost']:.2f} USD")
-    print(f"   Počet dnů: {r['days']}")
-    print(f"   Celkový zisk: {(r['total_profit'] if 'total_profit' in r else 0):.2f} USD")
-    print(f"   Návratnost investice (ROI): {(r['ROI'] if 'ROI' in r else 0):.2f} %")
-    print(f"   Roční zhodnocení (ROI p.a.): {(r['ROI_pa'] if 'ROI_pa' in r else 0):.2f} %")
-    print(f"   Efektivní využití kapitálu: {(r['efficiency'] if 'efficiency' in r else 0):.2f} %")
-    print(f"   Neinvestovaná  částka: {(r[' uninvested_amount'] if ' uninvested_amount' in r else 0):.2f} USD")
-    print(f"   Celkový kapitál: {(r['total_amount'] if 'total_amount' in r else 0):.2f} USD")
-    print(f"   Průměrné naplnění limitů (% z dnů): {fills}")
-    print(f"   Procento investic přes limitní nákupy: {r['percent_limit_invest']:.1f} %")
-    print(f"   Procento investic přes tržní nákupy: {r['percent_market_invest']:.1f} %")
-    print(f"   Tržní pokrytí (váha): {r['sum_market_weights']:.2f}\n")
+    print(f"   ROI: {r['ROI']:.2f} %")
+    print(f"   ROI p.a.: {r['ROI_pa']:.2f} %")
+    print(f"   Zisk: {r['total_profit']:.2f} USD")
+    print(f"   Efektivita: {r['efficiency']:.2f} %")
+    print(f"   Fill rate: {fills}")
+    print(f"   Limit %: {r['percent_limit_invest']:.1f} %")
+    print(f"   Market %: {r['percent_market_invest']:.1f} %\n")
 
-# ==== 8. Výpis TOP 3 podle největšího zisku ====
-top3_ROI = sorted(results, key=lambda x: x['ROI'], reverse=True)[:5]
 
-print("\n📊 TOP 3 strategií podle největšího ROI:")
-for i, r in enumerate(top3_ROI, 1):
-    w = [round(x, 3) for x in r['weights']]
-    mb = sorted(r['market_buy_for'])
+# ==== 3. TOP podle ROI ====
+top_roi = sorted(results, key=lambda x: x['ROI'], reverse=True)[:5]
+
+print("\n📊 TOP 5 strategií podle ROI:")
+for i, r in enumerate(top_roi, 1):
     fills = {k: round(v * 100, 1) for k, v in r['avg_fill_rate'].items()}
-    print(f"{i}. Váhy: {w}, Tržní nákup: {mb}")
-    print(f"   Průměrná cena: {r['avg_price']:.2f} USD")
-    print(f"   Celkové BTC: {r['total_btc']:.6f}")
-    print(f"   Celkově vložený kapitál: {r['total_cost']:.2f} USD")
-    print(f"   Počet dnů: {r['days']}")
-    print(f"   Celkový zisk: {(r['total_profit'] if 'total_profit' in r else 0):.2f} USD")
-    print(f"   Návratnost investice (ROI): {(r['ROI'] if 'ROI' in r else 0):.2f} %")
-    print(f"   Roční zhodnocení (ROI p.a.): {(r['ROI_pa'] if 'ROI_pa' in r else 0):.2f} %")
-    print(f"   Efektivní využití kapitálu: {(r['efficiency'] if 'efficiency' in r else 0):.2f} %")
-    print(f"   Neinvestovaná  částka: {(r[' uninvested_amount'] if ' uninvested_amount' in r else 0):.2f} USD")
-    print(f"   Celkový kapitál: {(r['total_amount'] if 'total_amount' in r else 0):.2f} USD")
-    print(f"   Průměrné naplnění limitů (% z dnů): {fills}")
-    print(f"   Procento investic přes limitní nákupy: {r['percent_limit_invest']:.1f} %")
-    print(f"   Procento investic přes tržní nákupy: {r['percent_market_invest']:.1f} %")
-    print(f"   Tržní pokrytí (váha): {r['sum_market_weights']:.2f}\n")
 
-btfd_df = pd.DataFrame(btfd_index_series)
+    print(f"{i}. Váhy: {list(r['weights'])}, Tržní nákup: {list(r['market_buy_for'])}")
+    print(f"   ROI: {r['ROI']:.2f} %")
+    print(f"   ROI p.a.: {r['ROI_pa']:.2f} %")
+    print(f"   Zisk: {r['total_profit']:.2f} USD")
+    print(f"   BTC: {r['total_btc']:.6f}")
+    print(f"   Průměrná cena: {r['avg_price']:.2f} USD")
+    print(f"   Efektivita: {r['efficiency']:.2f} %")
+    print(f"   Fill rate: {fills}")
+    print(f"   Limit %: {r['percent_limit_invest']:.1f} %")
+    print(f"   Market %: {r['percent_market_invest']:.1f} %\n")
+
+
+btfd_index_series = results[0]['btfd_index_series']
+btfd_df = pd.DataFrame(
+    btfd_index_series,
+    columns=['Datetime', 'BTC_Close', 'ATH', 'BTFD', 'Multiplier']
+)
+
+st.dataframe(btfd_df)
+
 mean_btfd = btfd_df['BTFD'].mean()
 mean_multiplier = btfd_df['Multiplier'].mean()
-
-
+#
+#
 # Vezmeme všechny multiplikátory
-multipliers = [entry['Multiplier'] for entry in btfd_index_series]
-adjusted_investments = [m * INVEST_PER_DAY for m in multipliers]
+multipliers = btfd_df['Multiplier'].to_numpy()
+adjusted_investments = multipliers * INVEST_PER_DAY
 # Medián denní investice
 median_daily_invest = np.median(adjusted_investments)
 # Medián měsíční investice (30 dní)
