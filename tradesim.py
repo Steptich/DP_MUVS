@@ -183,13 +183,13 @@ def simulate_day_hourly(data, start_idx, weights, market_buy_for, invest_per_day
     multiplier = get_btfd_multiplier(btfd,btfd_min,max_multiplier)
     invest_per_day = invest_per_day * multiplier
 
-    btfd_index_series.append({
-        'Datetime': start_time,
-        'BTC_Close': current_price,
-        'ATH': ath_until_now,
-        'BTFD': btfd,
-        'Multiplier': multiplier
-    })
+    btfd_index_series.append((
+        start_time,
+        current_price,
+        ath_until_now,
+        btfd,
+        multiplier
+    ))
 
     btc_bought = 0
     total_cost = 0

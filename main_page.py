@@ -263,79 +263,153 @@ print(f"Počet záznamů pro simulaci: {len(btc)}")
 
 btc['Weekday'] = btc['Datetime'].dt.weekday
 
-# === 3. Inicializace listu pro uložení vývoje BTFD indexu ===
-btfd_index_series = []  # (datetime, price, ath, btfd)
 
-limit_levels = [1, 2, 3, 4, 5]
-weight_sets = [
-    [1.00, 0.00, 0.00, 0.00, 0.00],  # jen 1 %
-]
+limit_levels = (1, 2, 3, 4, 5)
+weight_sets = ((1.00, 0.00, 0.00, 0.00, 0.00),(0.00, 1.00, 0.00, 0.00, 0.00))
 
-results = []
 last_price = btc.iloc[-1]['Close']
 ref_times = tr.get_reference_times(btc, hour=HOUR)
+ref_index = tuple(ref_times['index'])
 
-for i, weights in enumerate(weight_sets):
-    print(f"\nTestuji váhovou sadu {i + 1}/{len(weight_sets)}: {weights}")
-    nonzero_levels = [lvl for lvl, w in zip(limit_levels, weights) if w > 0]
-    possible_market_buy_for = [set(combo) for r in range(len(nonzero_levels)+1) for combo in combinations(nonzero_levels, r)]# [{limit_levels[0]}] #
-    for market_set in possible_market_buy_for:
-        sum_market_weights = sum(w for w, lvl in zip(weights, limit_levels) if lvl in market_set)
-        if sum_market_weights < 0.8:
+# =========================
+# ⚡ FAST HASH
+# =========================
+def df_to_hash(df: pd.DataFrame) -> int:
+    return hash((tuple(df.columns), tuple(df.to_numpy().flatten())))
+
+# =========================
+# 🎯 MARKET SETS CACHE
+# =========================
+@st.cache_data(hash_funcs={tuple: hash})
+def generate_market_sets(limit_levels, weights):
+    nonzero = tuple(lvl for lvl, w in zip(limit_levels, weights) if w > 0)
+    return tuple(frozenset(combo) for r in range(len(nonzero) + 1) for combo in combinations(nonzero, r))
+
+
+# =========================
+# 🚀 CORE SIMULATION (CACHE)
+# =========================
+@st.cache_data(hash_funcs={pd.DataFrame: df_to_hash, tuple: hash, frozenset: lambda x: hash(tuple(sorted(x)))})
+
+def simulate_configuration(
+    weights,
+    market_set,
+    btc,
+    ref_index,
+    limit_levels,
+    invest,
+    initial_ath,
+    btfd_min,
+    max_multiplier,
+    fee_limit,
+    fee_market,
+    last_price
+):
+    weights = tuple(weights)
+    market_set = frozenset(market_set)
+
+    # --- použij list, simulate_day_hourly do něj appenduje ---
+    btfd_index_series = []
+
+    avg_prices = []
+    total_btc = total_cost = count_days = 0
+    total_limit = total_market = 0
+
+    fills_sum = {lvl: 0 for lvl in limit_levels}
+
+    for idx in ref_index:
+        start_idx = btc.index.get_loc(idx)
+
+        res = tr.simulate_day_hourly(
+            btc,
+            start_idx,
+            weights,
+            market_set,
+            invest,
+            initial_ath,
+            limit_levels,
+            btfd_index_series,
+            btfd_min,
+            max_multiplier,
+            fee_limit,
+            fee_market
+        )
+
+        if res is None:
             continue
-        avg_prices = []
-        total_btc = 0
-        total_cost = 0
-        count_days = 0
-        total_invest_limit = 0
-        total_invest_market = 0
-        total_limit_fill = {lvl: 0 for lvl in limit_levels}
-        for idx in ref_times['index']:
-            start_idx = btc.index.get_loc(idx)
-            res = tr.simulate_day_hourly(btc, start_idx, weights, market_set, INVEST_PER_DAY,initial_ath,limit_levels,btfd_index_series,BTFD_MIN,MAX_MULTIPLIER,FEE_LIMIT,FEE_MARKET)
-            if res is not None:
-                avg_p, btc_b, cost, fills, invest_limit, invest_market = res
-                avg_prices.append(avg_p)
-                total_btc += btc_b
-                total_cost += cost
-                count_days += 1
-                for lvl in limit_levels:
-                    total_limit_fill[lvl] += fills[lvl]
-                total_invest_limit += invest_limit
-                total_invest_market += invest_market
-        if count_days == 0:
-            continue
 
-        # Výpočet procent limitních a tržních investic:
-        percent_limit_invest = 100 * total_invest_limit / total_cost if total_cost > 0 else 0
-        percent_market_invest = 100 * total_invest_market / total_cost if total_cost > 0 else 0
+        avg_p, btc_b, cost, fills, inv_l, inv_m = res
 
-        mean_price = np.mean(avg_prices)
-        avg_fill_rate = {lvl: total_limit_fill[lvl] / count_days for lvl in limit_levels}
-        total_profit = total_btc * last_price - total_cost
-        ROI = total_profit/total_cost *100
-        ROI_pa = (((total_btc * last_price) / total_cost) ** (1 / (count_days / 365)) -1)*100
-        efficiency = total_cost/(count_days*INVEST_PER_DAY) *100
-        uninvested_amount = count_days * INVEST_PER_DAY - total_cost
-        total_amount = total_btc * last_price + uninvested_amount
-        results.append({
-            'weights': weights,
-            'market_buy_for': market_set,
-            'avg_price': mean_price,
-            'total_btc': total_btc,
-            'total_cost': total_cost,
-            'total_profit': total_profit,
-            'ROI': ROI,
-            'ROI_pa': ROI_pa,
-            'efficiency': efficiency,
-            'days': count_days,
-            'uninvested_amount': uninvested_amount,
-            'total_amount': total_amount,
-            'sum_market_weights': sum_market_weights,
-            'avg_fill_rate': avg_fill_rate,
-            'percent_limit_invest': percent_limit_invest,
-            'percent_market_invest': percent_market_invest,
-        })
+        avg_prices.append(avg_p)
+        total_btc += btc_b
+        total_cost += cost
+        count_days += 1
+        total_limit += inv_l
+        total_market += inv_m
+
+        for lvl in limit_levels:
+            fills_sum[lvl] += fills[lvl]
+
+    if count_days == 0:
+        return None
+
+    return {
+        "weights": weights,
+        "market_buy_for": tuple(sorted(market_set)),
+        "avg_price": np.mean(avg_prices),
+        "total_btc": total_btc,
+        "total_cost": total_cost,
+        "days": count_days,
+        "total_profit": total_btc * last_price - total_cost,
+        "ROI": (total_btc * last_price - total_cost) / total_cost * 100,
+        "ROI_pa": (((total_btc * last_price) / total_cost) ** (1 / (count_days / 365)) - 1) * 100,
+        "efficiency": total_cost / (count_days * invest) * 100,
+        "uninvested_amount": count_days * invest - total_cost,
+        "total_amount": total_btc * last_price + (count_days * invest - total_cost),
+        "avg_fill_rate": {lvl: fills_sum[lvl] / count_days for lvl in limit_levels},
+        "percent_limit_invest": 100 * total_limit / total_cost if total_cost else 0,
+        "percent_market_invest": 100 * total_market / total_cost if total_cost else 0,
+        'btfd_index_series': btfd_index_series
+    }
+
+# =========================
+# 🧠 BACKTEST
+# =========================
+def run_backtest():
+    results = []
+
+    ref_index = tuple(ref_times['index'])
+
+    for i, weights in enumerate(weight_sets):
+        market_sets = generate_market_sets(limit_levels, weights)
+        for market_set in market_sets:
+            print(f"\nTestuji váhovou sadu {i + 1}/{len(weight_sets)}: {weights}")
+            res = simulate_configuration(
+                weights,
+                market_set,
+                btc,
+                ref_index,
+                limit_levels,
+                INVEST_PER_DAY,
+                initial_ath,
+                BTFD_MIN,
+                MAX_MULTIPLIER,
+                FEE_LIMIT,
+                FEE_MARKET,
+                last_price
+            )
+
+            if res:
+                results.append(res)
+
+    return results
+
+# =========================
+# ▶ RUN
+# =========================
+results = run_backtest()
+
+print(f"Počet výsledků: {len(results)}")
 
 # ==== 6. Výpis TOP 3 podle průměrné ceny ====
 top3_price = sorted(results, key=lambda x: x['avg_price'])[:5]
