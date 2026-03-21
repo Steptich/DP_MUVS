@@ -254,12 +254,11 @@ print(f"Dosavaď dosažené ATH před {st.session_state.start_date}: {initial_at
 btc = btc_full[
     (btc_full['Datetime'] >= pd.to_datetime(st.session_state.start_date)) &
     (btc_full['Datetime'] <= pd.to_datetime(st.session_state.end_date))
-].reset_index(drop=True)
+].sort_values('Datetime').drop_duplicates('Datetime').reset_index(drop=True)
 
 print(f"Počet záznamů pro simulaci: {len(btc)}")
 
 btc['Weekday'] = btc['Datetime'].dt.weekday
-btc = btc[~btc['Datetime'].duplicated(keep='first')].reset_index(drop=True)
 
 # === 3. Inicializace listu pro uložení vývoje BTFD indexu ===
 btfd_index_series = []  # (datetime, price, ath, btfd)

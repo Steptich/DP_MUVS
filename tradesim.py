@@ -64,6 +64,7 @@ def load_and_update_data(symbol, file_path, start, end, cloud_flag):
 
         print("CLOUD režim: načítám pouze CSV")
         df = pd.read_csv(file_path, sep=";", parse_dates=['Datetime'])
+        df = df.sort_values('Datetime').reset_index(drop=True) 
         return df
     
     if is_connected():
@@ -72,7 +73,8 @@ def load_and_update_data(symbol, file_path, start, end, cloud_flag):
        if os.path.exists(file_path):
            print("Načítám existující CSV...")
            df = pd.read_csv(file_path, sep=";", parse_dates=['Datetime'])
-
+           df = df.sort_values('Datetime').reset_index(drop=True) 
+        
            last_dt = df['Datetime'].max()
            print(f"Poslední datum v CSV: {last_dt}")
 
@@ -113,6 +115,7 @@ def load_and_update_data(symbol, file_path, start, end, cloud_flag):
         if os.path.exists(file_path):
             print("Offline režim: načítám uložené CSV")
             df = pd.read_csv(file_path, sep=";", parse_dates=['Datetime'])
+            df = df.sort_values('Datetime').reset_index(drop=True) 
             return df
         else:
             raise   FileNotFoundError("CSV soubor neexistuje a není připojení k internetu.")
