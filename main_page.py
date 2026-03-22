@@ -484,7 +484,7 @@ btfd_df = pd.DataFrame(
     columns=['Datetime', 'BTC_Close', 'ATH', 'BTFD', 'Multiplier']
 )
 
-st.dataframe(btfd_df)
+btfd_df = btfd_df.dropna(how='all').reset_index(drop=True)
 
 mean_btfd = btfd_df['BTFD'].mean()
 mean_multiplier = btfd_df['Multiplier'].mean()
