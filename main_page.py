@@ -262,7 +262,8 @@ btc = btc_full[
 print(f"Počet záznamů pro simulaci: {len(btc)}")
 
 btc['Weekday'] = btc['Datetime'].dt.weekday
-
+btc['ATH'] = btc['High'].cummax()
+index_map = {idx: i for i, idx in enumerate(btc.index)}
 
 limit_levels = (1, 2, 3, 4, 5)
 weight_sets = ((1.00, 0.00, 0.00, 0.00, 0.00),(0.00, 1.00, 0.00, 0.00, 0.00))
@@ -318,7 +319,7 @@ def simulate_configuration(
     fills_sum = {lvl: 0 for lvl in limit_levels}
 
     for idx in ref_index:
-        start_idx = btc.index.get_loc(idx)
+        start_idx = index_map[idx]
 
         res = tr.simulate_day_hourly(
             btc,

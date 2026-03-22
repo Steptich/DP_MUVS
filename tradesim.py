@@ -165,7 +165,7 @@ def get_btfd_multiplier(btfd_percent: float, btfd_min: float, max_multiplier: fl
         scale = (btfd_percent - 0) / (btfd_min - 0)
         return 1.0 + scale * (max_multiplier - 1.0)
 
-@st.cache_data
+
 def simulate_day_hourly(data, start_idx, weights, market_buy_for, invest_per_day,current_ath,limit_levels,btfd_index_series,btfd_min,max_multiplier,fee_limit=0.004,fee_market = 0.006):
     ref_price = data.iloc[start_idx]['Open']
     start_time = data.iloc[start_idx]['Datetime']
@@ -175,8 +175,7 @@ def simulate_day_hourly(data, start_idx, weights, market_buy_for, invest_per_day
         return None
 
     # Výpočet aktuálního ATH v rámci historických dat až po začátek dne
-    ath_until_now = data[data['Datetime'] < start_time]['High'].max()
-    ath_until_now = max(ath_until_now, current_ath)
+    ath_until_now = max(data.iloc[start_idx]['ATH'], current_ath)
 
     current_price = data.loc[start_idx, 'Close']
     btfd = 100 * (current_price - ath_until_now) / ath_until_now
