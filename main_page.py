@@ -38,38 +38,63 @@ year_before = last_dt - dt.timedelta(days=365)
 col1a, col2a = st.columns(2)
 
 with col1a:
-    # --- Inicializace ---
-    if "start_date" not in st.session_state:
-        st.session_state.start_date = year_before
-    if "end_date" not in st.session_state:
-        st.session_state.end_date = last_dt
-    # --- Callbacky ---
-    def on_start_change():
-        if st.session_state.start_date > st.session_state.end_date:
-            st.session_state.end_date = st.session_state.start_date
-    def on_end_change():
-        if st.session_state.end_date < st.session_state.start_date:
-            st.session_state.start_date = st.session_state.end_date
-    
-    # --- START DATE ---
-    st.date_input(
-        "Select start date for simulation:",
-        key="start_date",
-        min_value=HISTORICAL_START,
-        max_value=st.session_state.end_date,
-        format="DD.MM.YYYY",
-        on_change=on_start_change,      
+    # --- Mapping pevně definovaných období ---
+    period_map = {
+        "1 roku": 365,
+        "2 let": 365 * 2,
+        "3 let": 365 * 3,
+        "4 let": 365 * 4,
+        "5 let": 365 * 5,
+    }
+
+    date_option = st.selectbox(
+        "Každodenní investice po dobu:",
+        (*period_map.keys(), "Vlastní období"),
+     key="date_option",
     )
 
-    # --- END DATE ---
-    st.date_input(
-        "Select end date for simulation:",
-        key="end_date",
-        min_value=st.session_state.start_date,
-        max_value=last_dt,
-        format="DD.MM.YYYY",
-        on_change=on_end_change,
-    )
+    # --- Inicializace session_state (jen jednou) ---
+    if "start_date" not in st.session_state:
+        st.session_state.start_date = year_before
+
+    if "end_date" not in st.session_state:
+        st.session_state.end_date = last_dt
+
+    if date_option in period_map:
+        days = period_map[date_option]
+
+        st.session_state.end_date = last_dt
+        st.session_state.start_date = last_dt - dt.timedelta(days=days)
+
+
+    elif date_option == "Vlastní období":
+        # --- Callbacky ---
+        def on_start_change():
+            if st.session_state.start_date > st.session_state.end_date:
+                st.session_state.end_date = st.session_state.start_date
+        def on_end_change():
+            if st.session_state.end_date < st.session_state.start_date:
+                st.session_state.start_date = st.session_state.end_date
+
+        # --- START DATE ---
+        st.date_input(
+            "Od:",
+            key="start_date",
+            min_value=HISTORICAL_START,
+            max_value=st.session_state.end_date,
+            format="DD.MM.YYYY",
+            on_change=on_start_change,      
+        )
+
+        # --- END DATE ---
+        st.date_input(
+            "Do:",
+            key="end_date",
+            min_value=st.session_state.start_date,
+            max_value=last_dt,
+            format="DD.MM.YYYY",
+            on_change=on_end_change,
+        )
     
     # --- Inicializace session_state ---
     if "btfdmin_slider" not in st.session_state:
