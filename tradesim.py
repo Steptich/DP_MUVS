@@ -1,5 +1,6 @@
 import pandas as pd
 import streamlit as st
+import numpy as np
 from binance.client import Client
 from datetime import timezone
 import os
@@ -166,13 +167,19 @@ def get_btfd_multiplier(btfd_percent: float, btfd_min: float, max_multiplier: fl
         return 1.0 + scale * (max_multiplier - 1.0)
 
 
-def simulate_day_hourly(data, start_idx, weights, market_buy_for, invest_per_day,current_ath,limit_levels,btfd_index_series,btfd_min,max_multiplier,fee_limit=0.004,fee_market = 0.006):
-    ref_price = data.iloc[start_idx]['Open']
-    start_time = data.iloc[start_idx]['Datetime']
-    end_time = start_time + pd.Timedelta(days=1)
-    day_data = data[(data['Datetime'] >= start_time) & (data['Datetime'] < end_time)]
-    if day_data.empty or len(day_data) < 2:
+def simulate_day_hourly(data, start_idx, weights, market_mask, invest_per_day,current_ath,limit_levels,limit_multipliers,btfd_index_series,btfd_min,max_multiplier,fee_limit,fee_market,btfd_i):
+    end_idx = start_idx + 24
+
+    if end_idx > len(data):
         return None
+
+    day_data = data.iloc[start_idx:end_idx]
+
+    if len(day_data) < 2:
+        return None
+
+    start_time = data.iloc[start_idx]['Datetime']
+    ref_price = data.iloc[start_idx]['Open']
 
     # Výpočet aktuálního ATH v rámci historických dat až po začátek dne
     ath_until_now = max(data.iloc[start_idx]['ATH'], current_ath)
@@ -182,42 +189,52 @@ def simulate_day_hourly(data, start_idx, weights, market_buy_for, invest_per_day
     multiplier = get_btfd_multiplier(btfd,btfd_min,max_multiplier)
     invest_per_day = invest_per_day * multiplier
 
-    btfd_index_series.append((
-        start_time,
+    btfd_index_series[btfd_i] = (
+        start_idx,       # místo datetime → rychlejší
         current_price,
         ath_until_now,
         btfd,
         multiplier
-    ))
+    )
+
+    lows = day_data['Low'].values
+    closes = day_data['Close'].values
 
     btc_bought = 0
     total_cost = 0
-    fills = {lvl: 0 for lvl in limit_levels}
+    fills = np.zeros(len(limit_levels), dtype=np.int8)
 
     invest_limit_total = 0  # investice přes limitní nákup
     invest_market_total = 0  # investice přes tržní nákup
-    for w, lvl in zip(weights, limit_levels):
+    limit_prices = ref_price * limit_multipliers
+    for i in range(len(limit_levels)):
+        w = weights[i]
+
         if w == 0:
             continue
-        limit_price = ref_price * (1 - lvl / 100)
+        limit_price = limit_prices[i]
         invest_amount = w * invest_per_day
-        hit = day_data[day_data['Low'] <= limit_price]
-        if not hit.empty:
-            buy_price = hit.iloc[0]['Low']
-            fills[lvl] = 1
+        hit_indices = np.where(lows <= limit_price)[0]
+        if len(hit_indices) > 0:
+            buy_price = lows[hit_indices[0]]
+            fills[i] = 1
             effective_invest = invest_amount * (1 - fee_limit)
             invest_limit_total += invest_amount
-        elif lvl in market_buy_for:
-            buy_price = day_data.iloc[-2]['Close']
-            fills[lvl] = 0
+
+        elif market_mask[i]:
+            buy_price = closes[-2]
             effective_invest = invest_amount * (1 - fee_market)
             invest_market_total += invest_amount
+
         else:
-            fills[lvl] = 0
             continue
+
         btc_bought += effective_invest / buy_price
         total_cost += invest_amount
+
     if btc_bought == 0:
         return None
+    
     avg_price = total_cost / btc_bought
+
     return avg_price, btc_bought, total_cost, fills, invest_limit_total, invest_market_total

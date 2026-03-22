@@ -266,8 +266,9 @@ btc['ATH'] = btc['High'].cummax()
 index_map = {idx: i for i, idx in enumerate(btc.index)}
 
 limit_levels = (1, 2, 3, 4, 5)
-weight_sets = ((1.00, 0.00, 0.00, 0.00, 0.00),(0.00, 1.00, 0.00, 0.00, 0.00))
-
+weight_sets = ((1.00, 0.00, 0.00, 0.00, 0.00),)
+limit_multipliers = np.array([1 - lvl / 100 for lvl in limit_levels])
+    
 last_price = btc.iloc[-1]['Close']
 ref_times = tr.get_reference_times(btc, hour=HOUR)
 ref_index = tuple(ref_times['index'])
@@ -306,34 +307,37 @@ def simulate_configuration(
     fee_market,
     last_price
 ):
-    weights = tuple(weights)
-    market_set = frozenset(market_set)
+    market_mask = np.array([lvl in market_set for lvl in limit_levels], dtype=np.bool_)
 
     # --- použij list, simulate_day_hourly do něj appenduje ---
-    btfd_index_series = []
+    n_days = len(ref_index)
+    btfd_index_series = np.empty((n_days, 5), dtype=np.float64)
+    btfd_index_series[:] = np.nan
 
     avg_prices = []
     total_btc = total_cost = count_days = 0
     total_limit = total_market = 0
 
-    fills_sum = {lvl: 0 for lvl in limit_levels}
+    fills_sum = np.zeros(len(limit_levels), dtype=np.float32)
 
-    for idx in ref_index:
+    for day_i, idx in enumerate(ref_index):
         start_idx = index_map[idx]
 
         res = tr.simulate_day_hourly(
             btc,
             start_idx,
             weights,
-            market_set,
+            market_mask,
             invest,
             initial_ath,
             limit_levels,
+            limit_multipliers,
             btfd_index_series,
             btfd_min,
             max_multiplier,
             fee_limit,
-            fee_market
+            fee_market,
+            btfd_i=day_i,
         )
 
         if res is None:
@@ -348,12 +352,11 @@ def simulate_configuration(
         total_limit += inv_l
         total_market += inv_m
 
-        for lvl in limit_levels:
-            fills_sum[lvl] += fills[lvl]
+        fills_sum += fills
 
     if count_days == 0:
         return None
-
+    
     return {
         "weights": weights,
         "market_buy_for": tuple(sorted(market_set)),
@@ -367,7 +370,7 @@ def simulate_configuration(
         "efficiency": total_cost / (count_days * invest) * 100,
         "uninvested_amount": count_days * invest - total_cost,
         "total_amount": total_btc * last_price + (count_days * invest - total_cost),
-        "avg_fill_rate": {lvl: fills_sum[lvl] / count_days for lvl in limit_levels},
+        "avg_fill_rate": {lvl: fills_sum[i]/count_days for i, lvl in enumerate(limit_levels)},
         "percent_limit_invest": 100 * total_limit / total_cost if total_cost else 0,
         "percent_market_invest": 100 * total_market / total_cost if total_cost else 0,
         'btfd_index_series': btfd_index_series
