@@ -387,7 +387,7 @@ def run_backtest():
     for i, weights in enumerate(weight_sets):
         market_sets = generate_market_sets(limit_levels, weights)
         for market_set in market_sets:
-            print(f"\nTestuji váhovou sadu {i + 1}/{len(weight_sets)}: {weights}")
+            #print(f"\nTestuji váhovou sadu {i + 1}/{len(weight_sets)}: {weights}")
             res = simulate_configuration(
                 weights,
                 market_set,
