@@ -129,7 +129,7 @@ def get_reference_times(df, hour):
     refs = df[df['Hour'] == hour].copy()
     return refs.reset_index()
 
-def simulate_day_hourly(data, start_idx, weights, market_mask, invest_per_day,current_ath,limit_levels,limit_multipliers,btfd_index_series,btfd_min,max_multiplier,fee_limit,fee_market,btfd_i):
+def simulate_day_hourly(data, start_idx, weights, market_mask, invest_per_day,limit_levels,limit_multipliers,btfd_multipliers,fee_limit,fee_market,btfd_i):
     end_idx = start_idx + 24
 
     if end_idx > len(data):
@@ -149,7 +149,6 @@ def simulate_day_hourly(data, start_idx, weights, market_mask, invest_per_day,cu
     closes = day_data['Close'].values
 
     btc_bought = 0
-    total_cost = 0
     fills = np.zeros(len(limit_levels), dtype=np.int8)
 
     invest_limit_total = 0  # investice přes limitní nákup
