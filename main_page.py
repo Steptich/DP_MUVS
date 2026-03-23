@@ -208,60 +208,59 @@ with col2a:
 
     btc_thinned = st.session_state.btc_thinned
 
-    st.line_chart(
-        btc_thinned.set_index("Datetime")["Close"],
-        x_label="Čas",
-        y_label="Cena (USD)",
-        color="#F7931A",
-        height=300,
-        width='stretch'
-    )
+    plot_key = f"{st.session_state.start_date}_{st.session_state.end_date}"
+
     # tooltip
-    btc_thinned['date_cz'] = (
-        btc_thinned['Datetime'].dt.day.astype(str) + ". " +
-        btc_thinned['Datetime'].dt.month.map(cz_months) + " " +
-        btc_thinned['Datetime'].dt.year.astype(str)
-    )
+    if 'btc_plot_key' not in st.session_state or st.session_state.btc_plot_key != plot_key:
 
-    fig = px.line(
-    btc_thinned,
-    x="Datetime",
-    y="Close",
-    )
-
-    # zachování interaktivity + český tooltip
-    fig.update_traces(
-        line=dict(color="#F7931A"),
-        customdata=btc_thinned['date_cz'],
-        hovertemplate="<b>Cena:</b> %{y:.2f} USD<br><b>Datum:</b> %{customdata}<extra></extra>"
-    )
-
-    # formát osy X
-    fig.update_xaxes(
-        tickformat="%d.%m.%Y",   # formát osy
-        showgrid=True,            # zapnutí vertikálních grid line
-        gridwidth=1,              # tloušťka gridu
-        tickangle=-45             # naklonění tick labelů
-    )
-    
-    fig.update_layout(
-        xaxis_title="Čas",
-        yaxis_title="Cena (USD)",
-        hovermode="x unified"
-    )
-
-        # tooltip
-    fig.update_traces(
-        line=dict(color="#F7931A", width=1.5),
-        customdata=btc_thinned['date_cz'],
-        hovertemplate=(
-            "<b>Cena:</b> %{y:.2f} USD<br>" +
-            "<b>Datum:</b> %{customdata}" +
-            "<extra></extra>"
+        # --- Připrav graf jen pokud se změnil časový rozsah ---
+        btc_thinned['date_cz'] = (
+            btc_thinned['Datetime'].dt.day.astype(str) + ". " +
+            btc_thinned['Datetime'].dt.month.map(cz_months) + " " +
+            btc_thinned['Datetime'].dt.year.astype(str)
         )
-    )
 
-    st.plotly_chart(fig,width='stretch')
+        fig = px.line(
+            btc_thinned,
+            x="Datetime",
+            y="Close",
+        )
+
+        # zachování interaktivity + český tooltip
+        fig.update_traces(
+            line=dict(color="#F7931A"),
+            customdata=btc_thinned['date_cz'],
+            hovertemplate="<b>Cena:</b> %{y:.2f} USD<br><b>Datum:</b> %{customdata}<extra></extra>"
+        )
+
+        # formát osy X
+        fig.update_xaxes(
+            tickformat="%d.%m.%Y",   # formát osy
+            showgrid=True,            # zapnutí vertikálních grid line
+            gridwidth=1,              # tloušťka gridu
+            tickangle=-45             # naklonění tick labelů
+        )
+
+        fig.update_layout(
+            xaxis_title="Čas",
+            yaxis_title="Cena (USD)",
+            hovermode="x unified"
+        )
+
+            # tooltip
+        fig.update_traces(
+            line=dict(color="#F7931A", width=1.5),
+            customdata=btc_thinned['date_cz'],
+            hovertemplate=(
+                "<b>Cena:</b> %{y:.2f} USD<br>" +
+                "<b>Datum:</b> %{customdata}" +
+                "<extra></extra>"
+            )
+        )
+        st.session_state.btc_fig = fig
+        st.session_state.btc_plot_key = plot_key
+
+    st.plotly_chart(st.session_state.btc_fig)
 
 
 
