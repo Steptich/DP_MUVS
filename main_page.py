@@ -476,7 +476,7 @@ def simulate_configuration(
         "ROI_pa": (((total_btc * last_price) / total_cost) ** (1 / (count_days / 365)) - 1) * 100,
         "efficiency": total_cost / (count_days * invest) * 100,
         "uninvested_amount": count_days * invest - total_cost,
-        "total_amount": total_btc * last_price + (count_days * invest - total_cost),
+        "total_amount": total_btc * last_price + abs(count_days * invest - total_cost),
         "avg_fill_rate": {lvl: fills_sum[i]/count_days for i, lvl in enumerate(limit_levels)},
         "percent_limit_invest": 100 * total_limit / total_cost if total_cost else 0,
         "percent_market_invest": 100 * total_market / total_cost if total_cost else 0,
