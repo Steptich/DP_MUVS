@@ -229,12 +229,11 @@ def simulate_day_hourly(data, start_idx, weights, market_mask, invest_per_day,cu
         else:
             continue
 
-        btc_bought += effective_invest / buy_price
-        total_cost += invest_amount
+        btc_bought = effective_invest / buy_price
+        cost = invest_amount
 
     if btc_bought == 0:
         return None
     
-    avg_price = total_cost / btc_bought
 
-    return avg_price, btc_bought, total_cost, fills, invest_limit_total, invest_market_total
+    return btc_bought, cost, fills, invest_limit_total, invest_market_total

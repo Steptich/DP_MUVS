@@ -420,7 +420,7 @@ def simulate_configuration(
     btfd_index_series = np.empty((n_days, 5), dtype=np.float64)
     btfd_index_series[:] = np.nan
 
-    avg_prices = []
+    avg_prices_series = np.empty((n_days-1), dtype=np.float64)
     total_btc = total_cost = count_days = 0
     total_limit = total_market = 0
 
@@ -447,14 +447,15 @@ def simulate_configuration(
         )
 
         if res is None:
+            count_days = day_i  #posledni den nemusi byt nakup
             continue
 
-        avg_p, btc_b, cost, fills, inv_l, inv_m = res
+        btc_bought, cost, fills, inv_l, inv_m = res
 
-        avg_prices.append(avg_p)
-        total_btc += btc_b
+        total_btc += btc_bought
         total_cost += cost
-        count_days += 1
+        avg_prices_series[day_i] = total_cost/total_btc
+        count_days = day_i       
         total_limit += inv_l
         total_market += inv_m
 
@@ -466,7 +467,7 @@ def simulate_configuration(
     return {
         "weights": weights,
         "market_buy_for": tuple(sorted(market_set)),
-        "avg_price": np.mean(avg_prices),
+        "avg_price_series": avg_prices_series,
         "total_btc": total_btc,
         "total_cost": total_cost,
         "days": count_days,
