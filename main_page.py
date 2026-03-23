@@ -133,28 +133,28 @@ if 'btc_plot_key' not in st.session_state or st.session_state.btc_plot_key != pl
         btc_thinned['Datetime'].dt.year.astype(str)
     )
 
-    fig = px.line(
+    btc_fig = px.line(
         btc_thinned,
         x="Datetime",
         y="Close",
     )
 
     # formát osy X
-    fig.update_xaxes(
+    btc_fig.update_xaxes(
         tickformat="%d.%m.%Y",   # formát osy
         showgrid=True,            # zapnutí vertikálních grid line
         gridwidth=1,              # tloušťka gridu
         tickangle=-45             # naklonění tick labelů
     )
 
-    fig.update_layout(
+    btc_fig.update_layout(
         xaxis_title="Čas",
         yaxis_title="Cena (USD)",
         hovermode="x unified"
     )
 
         # tooltip
-    fig.update_traces(
+    btc_fig.update_traces(
         line=dict(color="#F7931A", width=1.5),
         customdata=btc_thinned['date_cz'],
         hovertemplate=(
@@ -163,10 +163,10 @@ if 'btc_plot_key' not in st.session_state or st.session_state.btc_plot_key != pl
             "<extra></extra>"
         )
     )
-    st.session_state.btc_fig = fig
+    st.session_state.btc_fig = btc_fig
     st.session_state.btc_plot_key = plot_key
 
-st.plotly_chart(st.session_state.btc_fig)
+st.plotly_chart(st.session_state.btc_fig,key="btc_plot")
 
 
 # --- Inicializace session_state ---
