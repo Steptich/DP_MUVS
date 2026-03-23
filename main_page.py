@@ -247,6 +247,22 @@ st.slider(
 MAX_MULTIPLIER = st.session_state.btfdMULTI_slider
 
 
+# --- Inicializace session_state pro fee_market ---
+if "investment_number" not in st.session_state:
+    st.session_state.investment_number = 100
+
+
+# --- Number input fee_market ---
+st.number_input(
+    "Investment (USD)",
+    min_value=10,
+    max_value=10000,
+    step=10,
+    #format="%0.2f",
+    key="investment_number",
+)
+INVEST_PER_DAY = st.session_state.investment_number
+
 
 # 1) základní BTFD (NEMĚNÍ SE)
 btfd_full = tr.compute_btfd_df(btc_full, known_initial_ath)
@@ -358,21 +374,6 @@ st.slider(
 
 FEE_MARKET = st.session_state.fee_market_slider / 100
 
-# --- Inicializace session_state pro fee_market ---
-if "investment_number" not in st.session_state:
-    st.session_state.investment_number = 100
-
-
-# --- Number input fee_market ---
-st.number_input(
-    "Investment (USD)",
-    min_value=10,
-    max_value=10000,
-    step=10,
-    #format="%0.2f",
-    key="investment_number",
-)
-INVEST_PER_DAY = st.session_state.investment_number
 
 limit_levels = (0, 1, 2, 3, 4, 5)
 weight_sets = ((0.00, 1.00, 0.00, 0.00, 0.00, 0.00),)
