@@ -351,7 +351,7 @@ if "investment_number" not in st.session_state:
 # --- Number input fee_market ---
 st.number_input(
     "Investment (USD)",
-    min_value=0,
+    min_value=10,
     max_value=10000,
     step=10,
     #format="%0.2f",
