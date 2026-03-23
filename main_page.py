@@ -36,231 +36,227 @@ last_dt = btc_full['Datetime'].max()
 year_before = last_dt - dt.timedelta(days=365)
 
 
+# --- Mapping pevně definovaných období ---
+period_map = {
+    "1 roku": 365,
+    "2 let": 365 * 2,
+    "3 let": 365 * 3,
+    "4 let": 365 * 4,
+    "5 let": 365 * 5,
+}
 
-col1a, col2a = st.columns(2)
+date_option = st.selectbox(
+    "Každodenní investice po dobu:",
+    (*period_map.keys(), "Vlastní období"),
+    key="date_option",
+)
 
-with col1a:
-    # --- Mapping pevně definovaných období ---
-    period_map = {
-        "1 roku": 365,
-        "2 let": 365 * 2,
-        "3 let": 365 * 3,
-        "4 let": 365 * 4,
-        "5 let": 365 * 5,
-    }
+# --- Inicializace session_state (jen jednou) ---
+if "start_date" not in st.session_state:
+    st.session_state.start_date = year_before
 
-    date_option = st.selectbox(
-        "Každodenní investice po dobu:",
-        (*period_map.keys(), "Vlastní období"),
-     key="date_option",
+if "end_date" not in st.session_state:
+    st.session_state.end_date = last_dt
+
+if date_option in period_map:
+    days = period_map[date_option]
+
+    st.session_state.end_date = last_dt
+    st.session_state.start_date = last_dt - dt.timedelta(days=days)
+
+
+elif date_option == "Vlastní období":
+    # --- Callbacky ---
+    def on_start_change():
+        if st.session_state.start_date > st.session_state.end_date:
+            st.session_state.end_date = st.session_state.start_date
+    def on_end_change():
+        if st.session_state.end_date < st.session_state.start_date:
+            st.session_state.start_date = st.session_state.end_date
+
+    # --- START DATE ---
+    st.date_input(
+        "Od:",
+        key="start_date",
+        min_value=HISTORICAL_START,
+        max_value=st.session_state.end_date,
+        format="DD.MM.YYYY",
+        on_change=on_start_change,      
     )
 
-    # --- Inicializace session_state (jen jednou) ---
-    if "start_date" not in st.session_state:
-        st.session_state.start_date = year_before
-
-    if "end_date" not in st.session_state:
-        st.session_state.end_date = last_dt
-
-    if date_option in period_map:
-        days = period_map[date_option]
-
-        st.session_state.end_date = last_dt
-        st.session_state.start_date = last_dt - dt.timedelta(days=days)
-
-
-    elif date_option == "Vlastní období":
-        # --- Callbacky ---
-        def on_start_change():
-            if st.session_state.start_date > st.session_state.end_date:
-                st.session_state.end_date = st.session_state.start_date
-        def on_end_change():
-            if st.session_state.end_date < st.session_state.start_date:
-                st.session_state.start_date = st.session_state.end_date
-
-        # --- START DATE ---
-        st.date_input(
-            "Od:",
-            key="start_date",
-            min_value=HISTORICAL_START,
-            max_value=st.session_state.end_date,
-            format="DD.MM.YYYY",
-            on_change=on_start_change,      
-        )
-
-        # --- END DATE ---
-        st.date_input(
-            "Do:",
-            key="end_date",
-            min_value=st.session_state.start_date,
-            max_value=last_dt,
-            format="DD.MM.YYYY",
-            on_change=on_end_change,
-        )
-    
-    # --- Inicializace session_state ---
-    if "btfdmin_slider" not in st.session_state:
-        st.session_state.btfdmin_slider = 75  # default hodnota
-
-    if "btfdmin_number" not in st.session_state:
-        st.session_state.btfdmin_number = st.session_state.btfdmin_slider
-
-    # --- Callback pro slider ---
-    def min_slider_changed():
-        st.session_state.btfdmin_number = st.session_state.btfdmin_slider
-
-    # --- Callback pro number input ---
-    def min_number_changed():
-        st.session_state.btfdmin_slider = st.session_state.btfdmin_number
-
-    # --- Number input ---
-    st.number_input(
-        "Insert min value",
-        min_value=10,
-        max_value=90,
-        step=1,
-        key="btfdmin_number",
-        on_change=min_number_changed
+    # --- END DATE ---
+    st.date_input(
+        "Do:",
+        key="end_date",
+        min_value=st.session_state.start_date,
+        max_value=last_dt,
+        format="DD.MM.YYYY",
+        on_change=on_end_change,
     )
 
-    # --- Slider ---
-    st.slider(
-        "Select min range value",
-        min_value=10,
-        max_value=90,
-        step=1,
-        key="btfdmin_slider",
-        on_change=min_slider_changed
+# --- Inicializace session_state ---
+if "btfdmin_slider" not in st.session_state:
+    st.session_state.btfdmin_slider = 75  # default hodnota
+
+if "btfdmin_number" not in st.session_state:
+    st.session_state.btfdmin_number = st.session_state.btfdmin_slider
+
+# --- Callback pro slider ---
+def min_slider_changed():
+    st.session_state.btfdmin_number = st.session_state.btfdmin_slider
+
+# --- Callback pro number input ---
+def min_number_changed():
+    st.session_state.btfdmin_slider = st.session_state.btfdmin_number
+
+# --- Number input ---
+st.number_input(
+    "Insert min value",
+    min_value=10,
+    max_value=90,
+    step=1,
+    key="btfdmin_number",
+    on_change=min_number_changed
+)
+
+# --- Slider ---
+st.slider(
+    "Select min range value",
+    min_value=10,
+    max_value=90,
+    step=1,
+    key="btfdmin_slider",
+    on_change=min_slider_changed
+)
+
+BTFD_MIN = - st.session_state.btfdmin_slider
+
+
+# --- Inicializace session_state ---
+if "btfdMULTI_slider" not in st.session_state:
+    st.session_state.btfdMULTI_slider = 4.0  # default hodnota
+
+if "btfd_number" not in st.session_state:
+    st.session_state.btfd_number = st.session_state.btfdMULTI_slider
+
+# --- Callback pro slider ---
+def slider_changed():
+    st.session_state.btfd_number = st.session_state.btfdMULTI_slider
+
+# --- Callback pro number input ---
+def number_changed():
+    st.session_state.btfdMULTI_slider = st.session_state.btfd_number
+
+# --- Number input ---
+st.number_input(
+    "Insert a number",
+    min_value=1.0,
+    max_value=10.0,
+    step=0.1,
+    format="%0.1f",
+    key="btfd_number",
+    on_change=number_changed
+)
+
+# --- Slider ---
+st.slider(
+    "Select a range of values",
+    min_value=1.0,
+    max_value=10.0,
+    step=0.1,
+    format="%0.1f",
+    key="btfdMULTI_slider",
+    on_change=slider_changed
+)
+
+MAX_MULTIPLIER = st.session_state.btfdMULTI_slider
+
+
+
+# --- 3. Ořez datasetu pro simulaci ---
+filter_key = f"{st.session_state.start_date}_{st.session_state.end_date}"
+if 'btc_filtered' not in st.session_state or st.session_state.get('last_filter_key') != filter_key:
+    st.session_state.btc_filtered = btc_full[
+        (btc_full['Datetime'] >= pd.to_datetime(st.session_state.start_date)) &
+        (btc_full['Datetime'] <= pd.to_datetime(st.session_state.end_date))
+    ].sort_values('Datetime').drop_duplicates('Datetime').reset_index(drop=True)
+    st.session_state.last_filter_key = filter_key
+
+btc = st.session_state.btc_filtered
+print(f"Počet záznamů pro simulaci: {len(btc)}")
+
+btc['Weekday'] = btc['Datetime'].dt.weekday
+btc['ATH'] = btc['High'].cummax()
+index_map = {idx: i for i, idx in enumerate(btc.index)}
+
+
+# české měsíce
+cz_months = {
+    1: "leden", 2: "únor", 3: "březen", 4: "duben",
+    5: "květen", 6: "červen", 7: "červenec", 8: "srpen",
+    9: "září", 10: "říjen", 11: "listopad", 12: "prosinec"
+}
+
+# data (1x denně)
+if 'btc_thinned' not in st.session_state or st.session_state.get('last_filter_key_thinned') != filter_key:
+    st.session_state.btc_thinned = btc.iloc[::24].copy()
+    st.session_state.last_filter_key_thinned = filter_key
+
+btc_thinned = st.session_state.btc_thinned
+
+plot_key = f"{st.session_state.start_date}_{st.session_state.end_date}"
+
+# tooltip
+if 'btc_plot_key' not in st.session_state or st.session_state.btc_plot_key != plot_key:
+
+    # --- Připrav graf jen pokud se změnil časový rozsah ---
+    btc_thinned['date_cz'] = (
+        btc_thinned['Datetime'].dt.day.astype(str) + ". " +
+        btc_thinned['Datetime'].dt.month.map(cz_months) + " " +
+        btc_thinned['Datetime'].dt.year.astype(str)
     )
 
-    BTFD_MIN = - st.session_state.btfdmin_slider
-
-
-    # --- Inicializace session_state ---
-    if "btfdMULTI_slider" not in st.session_state:
-        st.session_state.btfdMULTI_slider = 4.0  # default hodnota
-
-    if "btfd_number" not in st.session_state:
-        st.session_state.btfd_number = st.session_state.btfdMULTI_slider
-
-    # --- Callback pro slider ---
-    def slider_changed():
-        st.session_state.btfd_number = st.session_state.btfdMULTI_slider
-
-    # --- Callback pro number input ---
-    def number_changed():
-        st.session_state.btfdMULTI_slider = st.session_state.btfd_number
-
-    # --- Number input ---
-    st.number_input(
-        "Insert a number",
-        min_value=1.0,
-        max_value=10.0,
-        step=0.1,
-        format="%0.1f",
-        key="btfd_number",
-        on_change=number_changed
+    fig = px.line(
+        btc_thinned,
+        x="Datetime",
+        y="Close",
     )
 
-    # --- Slider ---
-    st.slider(
-        "Select a range of values",
-        min_value=1.0,
-        max_value=10.0,
-        step=0.1,
-        format="%0.1f",
-        key="btfdMULTI_slider",
-        on_change=slider_changed
+    # zachování interaktivity + český tooltip
+    fig.update_traces(
+        line=dict(color="#F7931A"),
+        customdata=btc_thinned['date_cz'],
+        hovertemplate="<b>Cena:</b> %{y:.2f} USD<br><b>Datum:</b> %{customdata}<extra></extra>"
     )
 
-    MAX_MULTIPLIER = st.session_state.btfdMULTI_slider
+    # formát osy X
+    fig.update_xaxes(
+        tickformat="%d.%m.%Y",   # formát osy
+        showgrid=True,            # zapnutí vertikálních grid line
+        gridwidth=1,              # tloušťka gridu
+        tickangle=-45             # naklonění tick labelů
+    )
 
-with col2a:
-    
-    # --- 3. Ořez datasetu pro simulaci ---
-    filter_key = f"{st.session_state.start_date}_{st.session_state.end_date}"
-    if 'btc_filtered' not in st.session_state or st.session_state.get('last_filter_key') != filter_key:
-        st.session_state.btc_filtered = btc_full[
-            (btc_full['Datetime'] >= pd.to_datetime(st.session_state.start_date)) &
-            (btc_full['Datetime'] <= pd.to_datetime(st.session_state.end_date))
-        ].sort_values('Datetime').drop_duplicates('Datetime').reset_index(drop=True)
-        st.session_state.last_filter_key = filter_key
+    fig.update_layout(
+        xaxis_title="Čas",
+        yaxis_title="Cena (USD)",
+        hovermode="x unified"
+    )
 
-    btc = st.session_state.btc_filtered
-    print(f"Počet záznamů pro simulaci: {len(btc)}")
-
-    btc['Weekday'] = btc['Datetime'].dt.weekday
-    btc['ATH'] = btc['High'].cummax()
-    index_map = {idx: i for i, idx in enumerate(btc.index)}
-
-
-    # české měsíce
-    cz_months = {
-        1: "leden", 2: "únor", 3: "březen", 4: "duben",
-        5: "květen", 6: "červen", 7: "červenec", 8: "srpen",
-        9: "září", 10: "říjen", 11: "listopad", 12: "prosinec"
-    }
-
-    # data (1x denně)
-    if 'btc_thinned' not in st.session_state or st.session_state.get('last_filter_key_thinned') != filter_key:
-        st.session_state.btc_thinned = btc.iloc[::24].copy()
-        st.session_state.last_filter_key_thinned = filter_key
-
-    btc_thinned = st.session_state.btc_thinned
-
-    plot_key = f"{st.session_state.start_date}_{st.session_state.end_date}"
-
-    # tooltip
-    if 'btc_plot_key' not in st.session_state or st.session_state.btc_plot_key != plot_key:
-
-        # --- Připrav graf jen pokud se změnil časový rozsah ---
-        btc_thinned['date_cz'] = (
-            btc_thinned['Datetime'].dt.day.astype(str) + ". " +
-            btc_thinned['Datetime'].dt.month.map(cz_months) + " " +
-            btc_thinned['Datetime'].dt.year.astype(str)
+        # tooltip
+    fig.update_traces(
+        line=dict(color="#F7931A", width=1.5),
+        customdata=btc_thinned['date_cz'],
+        hovertemplate=(
+            "<b>Cena:</b> %{y:.2f} USD<br>" +
+            "<b>Datum:</b> %{customdata}" +
+            "<extra></extra>"
         )
+    )
+    st.session_state.btc_fig = fig
+    st.session_state.btc_plot_key = plot_key
 
-        fig = px.line(
-            btc_thinned,
-            x="Datetime",
-            y="Close",
-        )
-
-        # zachování interaktivity + český tooltip
-        fig.update_traces(
-            line=dict(color="#F7931A"),
-            customdata=btc_thinned['date_cz'],
-            hovertemplate="<b>Cena:</b> %{y:.2f} USD<br><b>Datum:</b> %{customdata}<extra></extra>"
-        )
-
-        # formát osy X
-        fig.update_xaxes(
-            tickformat="%d.%m.%Y",   # formát osy
-            showgrid=True,            # zapnutí vertikálních grid line
-            gridwidth=1,              # tloušťka gridu
-            tickangle=-45             # naklonění tick labelů
-        )
-
-        fig.update_layout(
-            xaxis_title="Čas",
-            yaxis_title="Cena (USD)",
-            hovermode="x unified"
-        )
-
-            # tooltip
-        fig.update_traces(
-            line=dict(color="#F7931A", width=1.5),
-            customdata=btc_thinned['date_cz'],
-            hovertemplate=(
-                "<b>Cena:</b> %{y:.2f} USD<br>" +
-                "<b>Datum:</b> %{customdata}" +
-                "<extra></extra>"
-            )
-        )
-        st.session_state.btc_fig = fig
-        st.session_state.btc_plot_key = plot_key
-
-    st.plotly_chart(st.session_state.btc_fig)
+st.plotly_chart(st.session_state.btc_fig)
 
 
 
