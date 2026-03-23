@@ -177,11 +177,15 @@ with col1a:
 with col2a:
     
     # --- 3. Ořez datasetu pro simulaci ---
-    btc = btc_full[
-        (btc_full['Datetime'] >= pd.to_datetime(st.session_state.start_date)) &
-        (btc_full['Datetime'] <= pd.to_datetime(st.session_state.end_date))
-    ].sort_values('Datetime').drop_duplicates('Datetime').reset_index(drop=True)
+    filter_key = f"{st.session_state.start_date}_{st.session_state.end_date}"
+    if 'btc_filtered' not in st.session_state or st.session_state.get('last_filter_key') != filter_key:
+        st.session_state.btc_filtered = btc_full[
+            (btc_full['Datetime'] >= pd.to_datetime(st.session_state.start_date)) &
+            (btc_full['Datetime'] <= pd.to_datetime(st.session_state.end_date))
+        ].sort_values('Datetime').drop_duplicates('Datetime').reset_index(drop=True)
+        st.session_state.last_filter_key = filter_key
 
+    btc = st.session_state.btc_filtered
     print(f"Počet záznamů pro simulaci: {len(btc)}")
 
     btc['Weekday'] = btc['Datetime'].dt.weekday
@@ -197,7 +201,11 @@ with col2a:
     }
 
     # data (1x denně)
-    btc_thinned = btc.iloc[::24].copy()
+    if 'btc_thinned' not in st.session_state or st.session_state.get('last_filter_key_thinned') != filter_key:
+        st.session_state.btc_thinned = btc.iloc[::24].copy()
+        st.session_state.last_filter_key_thinned = filter_key
+
+    btc_thinned = st.session_state.btc_thinned
 
     st.line_chart(
         btc_thinned.set_index("Datetime")["Close"],
@@ -351,11 +359,16 @@ st.number_input(
 )
 INVEST_PER_DAY = st.session_state.investment_number
 
-initial_ath = tr.compute_initial_ath(
-    btc_full=btc_full,
-    start_date=st.session_state.start_date,
-    known_initial_ath=known_initial_ath
-)
+ath_key = str(st.session_state.start_date)
+if 'initial_ath_cache' not in st.session_state or st.session_state.get('last_ath_key') != ath_key:
+    st.session_state.initial_ath_cache = tr.compute_initial_ath(
+        btc_full=btc_full,
+        start_date=st.session_state.start_date,
+        known_initial_ath=known_initial_ath
+    )
+    st.session_state.last_ath_key = ath_key
+
+initial_ath = st.session_state.initial_ath_cache
 print(f"Dosavaď dosažené ATH před {st.session_state.start_date}: {initial_ath}")
 
 limit_levels = (1, 2, 3, 4, 5)
