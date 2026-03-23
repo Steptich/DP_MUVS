@@ -295,6 +295,136 @@ btfd = st.session_state.btfd_with_multiplier
 
 multipliers = btfd['Multiplier'].to_numpy()
 
+btfd_thinned = btfd.iloc[::24].copy()
+
+tab1, tab2,tab3 = st.tabs(["BTFD", "Multiplikátor","Investovaná částka"])
+
+plot_key1 = (
+    f"{st.session_state.start_date}_{st.session_state.end_date}_"
+    f"{st.session_state.btfdmin_slider}_{st.session_state.btfdMULTI_slider}"
+    f"{st.session_state.investment_number}"
+)
+
+# tooltip
+if 'btfd_plot_key' not in st.session_state or st.session_state.btfd_plot_key != plot_key1:
+
+    # --- Připrav graf jen pokud se změnil časový rozsah ---
+    btfd_thinned['date_cz'] = (
+        btfd_thinned['Datetime'].dt.day.astype(str) + ". " +
+        btfd_thinned['Datetime'].dt.month.map(cz_months) + " " +
+        btfd_thinned['Datetime'].dt.year.astype(str)
+    )
+    
+    btfd_fig = px.line(
+        btfd_thinned,
+        x="Datetime",
+        y="BTFD",
+    )
+
+    btfd_fig.add_hline(y=BTFD_MIN, line_dash="dash", line_color="red", annotation_text=f"Min: {BTFD_MIN} %", annotation_position="bottom right")
+    
+    # formát osy X
+    btfd_fig.update_xaxes(
+        tickformat="%d.%m.%Y",   # formát osy
+        showgrid=True,            # zapnutí vertikálních grid line
+        gridwidth=1,              # tloušťka gridu
+        tickangle=-45             # naklonění tick labelů
+    )
+
+    btfd_fig.update_layout(
+        xaxis_title="Čas",
+        yaxis_title="Hodnota indexu BTFD [%]",
+        hovermode="x unified"
+    )
+
+        # tooltip
+    btfd_fig.update_traces(
+        line=dict(color="blue", width=1.5),
+        customdata=btc_thinned['date_cz'],
+        hovertemplate=(
+            "<b>Hodnota BTFD:</b> %{y:.2f}%<br>" +
+            "<b>Datum:</b> %{customdata}" +
+            "<extra></extra>"
+        )
+    )
+
+
+    multiplier_fig = px.line(
+        btfd_thinned,
+        x="Datetime",
+        y="Multiplier",
+    )
+    multiplier_fig.add_hline(y=MAX_MULTIPLIER, line_dash="dash", line_color="green", annotation_text=f"Max: {MAX_MULTIPLIER}x", annotation_position="bottom right")
+    
+    # formát osy X
+    multiplier_fig.update_xaxes(
+        tickformat="%d.%m.%Y",   # formát osy
+        showgrid=True,            # zapnutí vertikálních grid line
+        gridwidth=1,              # tloušťka gridu
+        tickangle=-45             # naklonění tick labelů
+    )
+
+    multiplier_fig.update_layout(
+        xaxis_title="Čas",
+        yaxis_title="Hodnota multiplikátoru",
+        hovermode="x unified"
+    )
+
+        # tooltip
+    multiplier_fig.update_traces(
+        line=dict(color="red", width=1.5),
+        customdata=btc_thinned['date_cz'],
+        hovertemplate=(
+            "<b>Hodnota multiplikátoru:</b> %{y:.2f}x<br>" +
+            "<b>Datum:</b> %{customdata}" +
+            "<extra></extra>"
+        )
+    )
+
+    
+    invest_fig = px.line(
+        btfd_thinned,
+        x="Datetime",
+        y=btfd_thinned["Multiplier"]*INVEST_PER_DAY
+    )
+    invest_fig.add_hline(y=INVEST_PER_DAY, line_color="#F7931A", annotation_text=f"Fixní investice: {INVEST_PER_DAY} USD", annotation_position="bottom right")
+    
+    invest_fig.update_xaxes(
+        tickformat="%d.%m.%Y",   # formát osy
+        showgrid=True,            # zapnutí vertikálních grid line
+        gridwidth=1,              # tloušťka gridu
+        tickangle=-45             # naklonění tick labelů
+    )
+
+    invest_fig.update_layout(
+        xaxis_title="Čas",
+        yaxis_title="Ivestovaná částka [USD]",
+        hovermode="x unified"
+    )   
+
+    invest_fig.update_traces(
+        line=dict(color="green", width=1.5),
+        customdata=btc_thinned['date_cz'],
+        hovertemplate=(
+            "<b>Investovaná částka:</b> %{y:.2f} USD<br>" +
+            "<b>Datum:</b> %{customdata}" +
+            "<extra></extra>"
+        )
+    )    
+
+    st.session_state.btfd_fig = btfd_fig
+    st.session_state.multiplier_fig = multiplier_fig        
+    st.session_state.invest_fig = invest_fig
+    st.session_state.btfd_plot_key = plot_key1
+
+with tab1:
+    st.plotly_chart(st.session_state.btfd_fig, key="btfd_plot")
+
+with tab2:
+    st.plotly_chart(st.session_state.multiplier_fig, key="multiplier_plot")
+
+with tab3:
+    st.plotly_chart(st.session_state.invest_fig, key="invest_plot")
 # --- Inicializace session_state pro fee_limit ---
 if "fee_limit_slider" not in st.session_state:
     st.session_state.fee_limit_slider = 0.4  # výchozí hodnota 0.4 %
