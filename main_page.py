@@ -371,8 +371,8 @@ if 'initial_ath_cache' not in st.session_state or st.session_state.get('last_ath
 initial_ath = st.session_state.initial_ath_cache
 print(f"Dosavaď dosažené ATH před {st.session_state.start_date}: {initial_ath}")
 
-limit_levels = (1, 2, 3, 4, 5)
-weight_sets = ((1.00, 0.00, 0.00, 0.00, 0.00),)
+limit_levels = (0, 1, 2, 3, 4, 5)
+weight_sets = ((0.00, 1.00, 0.00, 0.00, 0.00, 0.00),)
 limit_multipliers = np.array([1 - lvl / 100 for lvl in limit_levels])
     
 last_price = btc.iloc[-1]['Close']
