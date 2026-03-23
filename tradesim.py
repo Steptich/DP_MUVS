@@ -121,33 +121,6 @@ def load_and_update_data(symbol, file_path, start, end, cloud_flag):
         else:
             raise   FileNotFoundError("CSV soubor neexistuje a není připojení k internetu.")
 
-@st.cache_data
-def compute_initial_ath(btc_full, start_date, known_initial_ath):
-    """
-    Vrátí ATH před zadaným start_date.
-
-    Parametry:
-    - btc_full: DataFrame s historickými daty (musí obsahovat 'Datetime' a 'High')
-    - start_date: str nebo datetime (např. '1 Jan, 2019')
-    - known_initial_ath: float (známé ATH mimo dataset)
-
-    Návratová hodnota:
-    - initial_ath: float
-    """
-
-    start_dt = pd.to_datetime(start_date)
-
-    btc_before = btc_full[btc_full['Datetime'] < start_dt]
-
-    # max z datasetu (pokud existuje)
-    data_ath = btc_before['High'].max() if not btc_before.empty else None
-
-    # finální ATH = maximum z obou
-    if data_ath is not None:
-        return max(known_initial_ath, data_ath)
-
-    return known_initial_ath
-
 # ==== 2. Funkce pro získání referenčních časů každý den ve stejnou hodinu ====
 @st.cache_data
 def get_reference_times(df, hour):
@@ -155,17 +128,6 @@ def get_reference_times(df, hour):
     df['Hour'] = df['Datetime'].dt.hour
     refs = df[df['Hour'] == hour].copy()
     return refs.reset_index()
-
-def get_btfd_multiplier(btfd_percent: float, btfd_min: float, max_multiplier: float) -> float:
-    if btfd_percent >= 0:
-        return 1.0
-    elif btfd_percent <= btfd_min:
-        return max_multiplier
-    else:
-        # Lineární interpolace mezi 1 a max_multiplier
-        scale = (btfd_percent - 0) / (btfd_min - 0)
-        return 1.0 + scale * (max_multiplier - 1.0)
-
 
 def simulate_day_hourly(data, start_idx, weights, market_mask, invest_per_day,current_ath,limit_levels,limit_multipliers,btfd_index_series,btfd_min,max_multiplier,fee_limit,fee_market,btfd_i):
     end_idx = start_idx + 24
@@ -181,21 +143,7 @@ def simulate_day_hourly(data, start_idx, weights, market_mask, invest_per_day,cu
     start_time = data.iloc[start_idx]['Datetime']
     ref_price = data.iloc[start_idx]['Open']
 
-    # Výpočet aktuálního ATH v rámci historických dat až po začátek dne
-    ath_until_now = max(data.iloc[start_idx]['ATH'], current_ath)
-
-    current_price = data.loc[start_idx, 'Close']
-    btfd = 100 * (current_price - ath_until_now) / ath_until_now
-    multiplier = get_btfd_multiplier(btfd,btfd_min,max_multiplier)
-    invest_per_day = invest_per_day * multiplier
-
-    btfd_index_series[btfd_i] = (
-        start_idx,       # místo datetime → rychlejší
-        current_price,
-        ath_until_now,
-        btfd,
-        multiplier
-    )
+    invest_per_day = invest_per_day * btfd_multipliers[btfd_i]
 
     lows = day_data['Low'].values
     closes = day_data['Close'].values

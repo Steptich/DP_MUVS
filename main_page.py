@@ -94,6 +94,92 @@ elif date_option == "Vlastní období":
         on_change=on_end_change,
     )
 
+# --- 3. Ořez datasetu pro simulaci ---
+btc_filter_key = f"{st.session_state.start_date}_{st.session_state.end_date}"
+if 'btc_filtered' not in st.session_state or st.session_state.get('last_btc_filter_key') != btc_filter_key:
+    st.session_state.btc_filtered = btc_full[
+        (btc_full['Datetime'] >= pd.to_datetime(st.session_state.start_date)) &
+        (btc_full['Datetime'] <= pd.to_datetime(st.session_state.end_date))
+    ].sort_values('Datetime').drop_duplicates('Datetime').reset_index(drop=True)
+    st.session_state.last_btc_filter_key = btc_filter_key
+
+btc = st.session_state.btc_filtered
+print(f"Počet záznamů pro simulaci: {len(btc)}")
+
+btc['Weekday'] = btc['Datetime'].dt.weekday
+btc['ATH'] = btc['High'].cummax()
+index_map = {idx: i for i, idx in enumerate(btc.index)}
+
+
+# české měsíce
+cz_months = {
+    1: "leden", 2: "únor", 3: "březen", 4: "duben",
+    5: "květen", 6: "červen", 7: "červenec", 8: "srpen",
+    9: "září", 10: "říjen", 11: "listopad", 12: "prosinec"
+}
+
+# data (1x denně)
+if 'btc_thinned' not in st.session_state or st.session_state.get('last_btc_filter_key_thinned') != btc_filter_key:
+    st.session_state.btc_thinned = btc.iloc[::24].copy()
+    st.session_state.last_btc_filter_key_thinned = btc_filter_key
+
+btc_thinned = st.session_state.btc_thinned
+
+plot_key = f"{st.session_state.start_date}_{st.session_state.end_date}"
+
+# tooltip
+if 'btc_plot_key' not in st.session_state or st.session_state.btc_plot_key != plot_key:
+
+    # --- Připrav graf jen pokud se změnil časový rozsah ---
+    btc_thinned['date_cz'] = (
+        btc_thinned['Datetime'].dt.day.astype(str) + ". " +
+        btc_thinned['Datetime'].dt.month.map(cz_months) + " " +
+        btc_thinned['Datetime'].dt.year.astype(str)
+    )
+
+    fig = px.line(
+        btc_thinned,
+        x="Datetime",
+        y="Close",
+    )
+
+    # zachování interaktivity + český tooltip
+    fig.update_traces(
+        line=dict(color="#F7931A"),
+        customdata=btc_thinned['date_cz'],
+        hovertemplate="<b>Cena:</b> %{y:.2f} USD<br><b>Datum:</b> %{customdata}<extra></extra>"
+    )
+
+    # formát osy X
+    fig.update_xaxes(
+        tickformat="%d.%m.%Y",   # formát osy
+        showgrid=True,            # zapnutí vertikálních grid line
+        gridwidth=1,              # tloušťka gridu
+        tickangle=-45             # naklonění tick labelů
+    )
+
+    fig.update_layout(
+        xaxis_title="Čas",
+        yaxis_title="Cena (USD)",
+        hovermode="x unified"
+    )
+
+        # tooltip
+    fig.update_traces(
+        line=dict(color="#F7931A", width=1.5),
+        customdata=btc_thinned['date_cz'],
+        hovertemplate=(
+            "<b>Cena:</b> %{y:.2f} USD<br>" +
+            "<b>Datum:</b> %{customdata}" +
+            "<extra></extra>"
+        )
+    )
+    st.session_state.btc_fig = fig
+    st.session_state.btc_plot_key = plot_key
+
+st.plotly_chart(st.session_state.btc_fig)
+
+
 # --- Inicializace session_state ---
 if "btfdmin_slider" not in st.session_state:
     st.session_state.btfdmin_slider = 75  # default hodnota
@@ -171,94 +257,68 @@ st.slider(
 
 MAX_MULTIPLIER = st.session_state.btfdMULTI_slider
 
+@st.cache_data(show_spinner=False)
+def compute_btfd_df(btc_full: pd.DataFrame, known_initial_ath: float):
+    df = btc_full[['Datetime', 'High', 'Close']].copy()
 
+    # --- ATH (globální přes celý dataset) ---
+    df['ATH'] = np.maximum(
+        df['High'].cummax(),
+        known_initial_ath
+    )
+    # --- BTFD ---
+    df['BTFD'] = (df['Close'] - df['ATH']) / df['ATH'] * 100
 
-# --- 3. Ořez datasetu pro simulaci ---
-filter_key = f"{st.session_state.start_date}_{st.session_state.end_date}"
-if 'btc_filtered' not in st.session_state or st.session_state.get('last_filter_key') != filter_key:
-    st.session_state.btc_filtered = btc_full[
-        (btc_full['Datetime'] >= pd.to_datetime(st.session_state.start_date)) &
-        (btc_full['Datetime'] <= pd.to_datetime(st.session_state.end_date))
+    return df[['Datetime', 'BTFD']]
+
+# 1) základní BTFD (NEMĚNÍ SE)
+btfd_full = compute_btfd_df(btc_full, known_initial_ath)
+
+# --- 3. Ořez btfd pro simulaci ---
+btfd_filter_key = f"{st.session_state.start_date}_{st.session_state.end_date}"
+if'btfd_filtered' not in st.session_state or st.session_state.get('last_btfd_filter_key') != btfd_filter_key:
+    st.session_state.btfd_filtered = btfd_full[
+        (btfd_full['Datetime'] >= pd.to_datetime(st.session_state.start_date)) &
+        (btfd_full['Datetime'] <= pd.to_datetime(st.session_state.end_date))
     ].sort_values('Datetime').drop_duplicates('Datetime').reset_index(drop=True)
-    st.session_state.last_filter_key = filter_key
+    st.session_state.last_btfd_filter_key = btfd_filter_key
 
-btc = st.session_state.btc_filtered
-print(f"Počet záznamů pro simulaci: {len(btc)}")
+btfd = st.session_state.btfd_filtered
 
-btc['Weekday'] = btc['Datetime'].dt.weekday
-btc['ATH'] = btc['High'].cummax()
-index_map = {idx: i for i, idx in enumerate(btc.index)}
+@st.cache_data(show_spinner=False)
+def add_multiplier(btfd_df: pd.DataFrame, btfd_min: float, max_multiplier: float):
 
+    df = btfd_df.copy()
 
-# české měsíce
-cz_months = {
-    1: "leden", 2: "únor", 3: "březen", 4: "duben",
-    5: "květen", 6: "červen", 7: "červenec", 8: "srpen",
-    9: "září", 10: "říjen", 11: "listopad", 12: "prosinec"
-}
+    btfd = df['BTFD'].to_numpy()
+    denom = btfd_min if btfd_min != 0 else -1e-9
 
-# data (1x denně)
-if 'btc_thinned' not in st.session_state or st.session_state.get('last_filter_key_thinned') != filter_key:
-    st.session_state.btc_thinned = btc.iloc[::24].copy()
-    st.session_state.last_filter_key_thinned = filter_key
-
-btc_thinned = st.session_state.btc_thinned
-
-plot_key = f"{st.session_state.start_date}_{st.session_state.end_date}"
-
-# tooltip
-if 'btc_plot_key' not in st.session_state or st.session_state.btc_plot_key != plot_key:
-
-    # --- Připrav graf jen pokud se změnil časový rozsah ---
-    btc_thinned['date_cz'] = (
-        btc_thinned['Datetime'].dt.day.astype(str) + ". " +
-        btc_thinned['Datetime'].dt.month.map(cz_months) + " " +
-        btc_thinned['Datetime'].dt.year.astype(str)
-    )
-
-    fig = px.line(
-        btc_thinned,
-        x="Datetime",
-        y="Close",
-    )
-
-    # zachování interaktivity + český tooltip
-    fig.update_traces(
-        line=dict(color="#F7931A"),
-        customdata=btc_thinned['date_cz'],
-        hovertemplate="<b>Cena:</b> %{y:.2f} USD<br><b>Datum:</b> %{customdata}<extra></extra>"
-    )
-
-    # formát osy X
-    fig.update_xaxes(
-        tickformat="%d.%m.%Y",   # formát osy
-        showgrid=True,            # zapnutí vertikálních grid line
-        gridwidth=1,              # tloušťka gridu
-        tickangle=-45             # naklonění tick labelů
-    )
-
-    fig.update_layout(
-        xaxis_title="Čas",
-        yaxis_title="Cena (USD)",
-        hovermode="x unified"
-    )
-
-        # tooltip
-    fig.update_traces(
-        line=dict(color="#F7931A", width=1.5),
-        customdata=btc_thinned['date_cz'],
-        hovertemplate=(
-            "<b>Cena:</b> %{y:.2f} USD<br>" +
-            "<b>Datum:</b> %{customdata}" +
-            "<extra></extra>"
+    df['Multiplier'] = np.where(
+        btfd >= 0,
+        1.0,
+        np.where(
+            btfd <= btfd_min,
+            max_multiplier,
+            1.0 + (btfd / denom) * (max_multiplier - 1.0)
         )
     )
-    st.session_state.btc_fig = fig
-    st.session_state.btc_plot_key = plot_key
 
-st.plotly_chart(st.session_state.btc_fig)
+    return df
 
 
+btfd_multiplier_key = f"{btfd_filter_key}_{BTFD_MIN}_{MAX_MULTIPLIER}"
+if 'btfd_with_multiplier' not in st.session_state or st.session_state.get('last_btfd_multiplier_key') != btfd_multiplier_key:
+    btfd_with_multiplier = add_multiplier(
+        btfd,
+        BTFD_MIN,
+        MAX_MULTIPLIER
+    )
+    st.session_state.btfd_with_multiplier = btfd_with_multiplier
+    st.session_state.last_btfd_multiplier_key = btfd_multiplier_key
+
+btfd = st.session_state.btfd_with_multiplier
+
+multipliers = btfd['Multiplier'].to_numpy()
 
 # --- Inicializace session_state pro fee_limit ---
 if "fee_limit_slider" not in st.session_state:
@@ -355,18 +415,6 @@ st.number_input(
 )
 INVEST_PER_DAY = st.session_state.investment_number
 
-ath_key = str(st.session_state.start_date)
-if 'initial_ath_cache' not in st.session_state or st.session_state.get('last_ath_key') != ath_key:
-    st.session_state.initial_ath_cache = tr.compute_initial_ath(
-        btc_full=btc_full,
-        start_date=st.session_state.start_date,
-        known_initial_ath=known_initial_ath
-    )
-    st.session_state.last_ath_key = ath_key
-
-initial_ath = st.session_state.initial_ath_cache
-print(f"Dosavaď dosažené ATH před {st.session_state.start_date}: {initial_ath}")
-
 limit_levels = (0, 1, 2, 3, 4, 5)
 weight_sets = ((0.00, 1.00, 0.00, 0.00, 0.00, 0.00),)
 limit_multipliers = np.array([1 - lvl / 100 for lvl in limit_levels])
@@ -402,9 +450,7 @@ def simulate_configuration(
     ref_index,
     limit_levels,
     invest,
-    initial_ath,
-    btfd_min,
-    max_multiplier,
+    btfd_multipliers,
     fee_limit,
     fee_market,
     last_price
@@ -413,8 +459,6 @@ def simulate_configuration(
 
     # --- použij list, simulate_day_hourly do něj appenduje ---
     n_days = len(ref_index)
-    btfd_index_series = np.empty((n_days, 5), dtype=np.float64)
-    btfd_index_series[:] = np.nan
 
     avg_prices_series = np.empty((n_days-1), dtype=np.float64)
     total_btc = total_cost = count_days = 0
@@ -431,12 +475,9 @@ def simulate_configuration(
             weights,
             market_mask,
             invest,
-            initial_ath,
             limit_levels,
             limit_multipliers,
-            btfd_index_series,
-            btfd_min,
-            max_multiplier,
+            btfd_multipliers,
             fee_limit,
             fee_market,
             btfd_i=day_i,
@@ -476,7 +517,6 @@ def simulate_configuration(
         "avg_fill_rate": {lvl: fills_sum[i]/count_days for i, lvl in enumerate(limit_levels)},
         "percent_limit_invest": 100 * total_limit / total_cost if total_cost else 0,
         "percent_market_invest": 100 * total_market / total_cost if total_cost else 0,
-        'btfd_index_series': btfd_index_series
     }
 
 # =========================
@@ -498,9 +538,7 @@ def run_backtest():
                 ref_index,
                 limit_levels,
                 INVEST_PER_DAY,
-                initial_ath,
-                BTFD_MIN,
-                MAX_MULTIPLIER,
+                multipliers,
                 FEE_LIMIT,
                 FEE_MARKET,
                 last_price
@@ -578,20 +616,13 @@ for i, r in enumerate(top_price, 1):
 #    st.write("---")
 
 # --- BTFD statistika ---
-btfd_index_series = results[0]['btfd_index_series']
-btfd_df = pd.DataFrame(
-    btfd_index_series,
-    columns=['Datetime', 'BTC_Close', 'ATH', 'BTFD', 'Multiplier']
-)
 
-btfd_df = btfd_df.dropna(how='all').reset_index(drop=True)
-
-mean_btfd = btfd_df['BTFD'].mean()
-mean_multiplier = btfd_df['Multiplier'].mean()
+mean_btfd = btfd['BTFD'].mean()
+mean_multiplier = btfd['Multiplier'].mean()
 #
 #
 # Vezmeme všechny multiplikátory
-multipliers = btfd_df['Multiplier'].to_numpy()
+multipliers = btfd['Multiplier'].to_numpy()
 adjusted_investments = multipliers * INVEST_PER_DAY
 # Medián denní investice
 median_daily_invest = np.median(adjusted_investments)
