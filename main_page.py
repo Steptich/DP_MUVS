@@ -386,7 +386,8 @@ def df_to_hash(df: pd.DataFrame) -> int:
 
 @st.cache_data
 def build_market_mask(limit_levels, market_set):
-    return np.array([lvl in market_set for lvl in limit_levels], dtype=np.bool_)
+    market_set = set(market_set)
+    return np.isin(limit_levels, list(market_set))
 
 @st.cache_data(hash_funcs={pd.DataFrame: df_to_hash, tuple: hash, frozenset: lambda x: hash(tuple(sorted(x)))})
 
@@ -408,7 +409,7 @@ def simulate_configuration(
     # --- použij list, simulate_day_hourly do něj appenduje ---
     n_days = len(ref_positions)
 
-    avg_prices_series = np.empty((n_days-1), dtype=np.float64)
+    avg_prices_series = np.empty((n_days), dtype=np.float64)
     total_btc = total_cost = count_days = 0
     total_limit = total_market = 0
 
@@ -450,6 +451,8 @@ def simulate_configuration(
     if count_days == 0:
         return None
     
+    avg_prices_series = avg_prices_series[avg_prices_series != 0]
+
     return {
         "weights": weights,
         "market_buy_for": tuple(sorted(market_set)),
