@@ -4,11 +4,12 @@ import tradesim as tr
 import plotly.express as px
 import pandas as pd
 import numpy as np
+import time
 from itertools import combinations
 
 st.header("HANIČKA JE ŠIKULKA")
 
-
+start = time.time()
 
 # --- Nastavení ---
 SYMBOL = "BTCUSDT"
@@ -605,3 +606,7 @@ median_monthly_invest = median_daily_invest * 30
 #st.write(f"- Odpovídající průměrná měsíční investice (30 dní): {mean_multiplier * INVEST_PER_DAY * 30:.2f} USD")
 #st.write(f"- Medián denní investice: {median_daily_invest:.2f} USD")
 #st.write(f"- Medián měsíční investice: {median_monthly_invest:.2f} USD")
+
+end = time.time()
+
+st.write(f"Total runtime of the program is {end - start} seconds")
