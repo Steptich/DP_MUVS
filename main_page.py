@@ -1,6 +1,7 @@
 import streamlit as st
 import datetime as dt
 import tradesim as tr
+import plotly.express as px
 import pandas as pd
 import numpy as np
 from itertools import combinations
@@ -174,7 +175,86 @@ with col1a:
     MAX_MULTIPLIER = st.session_state.btfdMULTI_slider
 
 with col2a:
-    "dummy text"
+    
+    # --- 3. Ořez datasetu pro simulaci ---
+    btc = btc_full[
+        (btc_full['Datetime'] >= pd.to_datetime(st.session_state.start_date)) &
+        (btc_full['Datetime'] <= pd.to_datetime(st.session_state.end_date))
+    ].sort_values('Datetime').drop_duplicates('Datetime').reset_index(drop=True)
+
+    print(f"Počet záznamů pro simulaci: {len(btc)}")
+
+    btc['Weekday'] = btc['Datetime'].dt.weekday
+    btc['ATH'] = btc['High'].cummax()
+    index_map = {idx: i for i, idx in enumerate(btc.index)}
+
+
+    # české měsíce
+    cz_months = {
+        1: "leden", 2: "únor", 3: "březen", 4: "duben",
+        5: "květen", 6: "červen", 7: "červenec", 8: "srpen",
+        9: "září", 10: "říjen", 11: "listopad", 12: "prosinec"
+    }
+
+    # data (1x denně)
+    btc_thinned = btc.iloc[::24].copy()
+
+    st.line_chart(
+        btc_thinned.set_index("Datetime")["Close"],
+        x_label="Čas",
+        y_label="Cena (USD)",
+        color="#F7931A",
+        height=300,
+        width='stretch'
+    )
+    # tooltip
+    btc_thinned['date_cz'] = (
+        btc_thinned['Datetime'].dt.day.astype(str) + ". " +
+        btc_thinned['Datetime'].dt.month.map(cz_months) + " " +
+        btc_thinned['Datetime'].dt.year.astype(str)
+    )
+
+    fig = px.line(
+    btc_thinned,
+    x="Datetime",
+    y="Close",
+    )
+
+    # zachování interaktivity + český tooltip
+    fig.update_traces(
+        line=dict(color="#F7931A"),
+        customdata=btc_thinned['date_cz'],
+        hovertemplate="<b>Cena:</b> %{y:.2f} USD<br><b>Datum:</b> %{customdata}<extra></extra>"
+    )
+
+    # formát osy X
+    fig.update_xaxes(
+        tickformat="%d.%m.%Y",   # formát osy
+        showgrid=True,            # zapnutí vertikálních grid line
+        gridwidth=1,              # tloušťka gridu
+        tickangle=-45             # naklonění tick labelů
+    )
+    
+    fig.update_layout(
+        xaxis_title="Čas",
+        yaxis_title="Cena (USD)",
+        hovermode="x unified"
+    )
+
+        # tooltip
+    fig.update_traces(
+        line=dict(color="#F7931A", width=1.5),
+        customdata=btc_thinned['date_cz'],
+        hovertemplate=(
+            "<b>Cena:</b> %{y:.2f} USD<br>" +
+            "<b>Datum:</b> %{customdata}" +
+            "<extra></extra>"
+        )
+    )
+
+    st.plotly_chart(fig,width='stretch')
+
+
 
 # --- Inicializace session_state pro fee_limit ---
 if "fee_limit_slider" not in st.session_state:
@@ -277,18 +357,6 @@ initial_ath = tr.compute_initial_ath(
     known_initial_ath=known_initial_ath
 )
 print(f"Dosavaď dosažené ATH před {st.session_state.start_date}: {initial_ath}")
-
-# --- 3. Ořez datasetu pro simulaci ---
-btc = btc_full[
-    (btc_full['Datetime'] >= pd.to_datetime(st.session_state.start_date)) &
-    (btc_full['Datetime'] <= pd.to_datetime(st.session_state.end_date))
-].sort_values('Datetime').drop_duplicates('Datetime').reset_index(drop=True)
-
-print(f"Počet záznamů pro simulaci: {len(btc)}")
-
-btc['Weekday'] = btc['Datetime'].dt.weekday
-btc['ATH'] = btc['High'].cummax()
-index_map = {idx: i for i, idx in enumerate(btc.index)}
 
 limit_levels = (1, 2, 3, 4, 5)
 weight_sets = ((1.00, 0.00, 0.00, 0.00, 0.00),)
