@@ -5,7 +5,7 @@ import plotly.express as px
 import pandas as pd
 import numpy as np
 import time
-from itertools import combinations
+
 
 st.header("HANIČKA JE ŠIKULKA")
 
@@ -106,10 +106,6 @@ if 'btc_filtered' not in st.session_state or st.session_state.get('last_btc_filt
 btc = st.session_state.btc_filtered
 print(f"Počet záznamů pro simulaci: {len(btc)}")
 
-btc['Weekday'] = btc['Datetime'].dt.weekday
-btc['ATH'] = btc['High'].cummax()
-index_map = {idx: i for i, idx in enumerate(btc.index)}
-
 
 # české měsíce
 cz_months = {
@@ -141,13 +137,6 @@ if 'btc_plot_key' not in st.session_state or st.session_state.btc_plot_key != pl
         btc_thinned,
         x="Datetime",
         y="Close",
-    )
-
-    # zachování interaktivity + český tooltip
-    fig.update_traces(
-        line=dict(color="#F7931A"),
-        customdata=btc_thinned['date_cz'],
-        hovertemplate="<b>Cena:</b> %{y:.2f} USD<br><b>Datum:</b> %{customdata}<extra></extra>"
     )
 
     # formát osy X
@@ -257,22 +246,10 @@ st.slider(
 
 MAX_MULTIPLIER = st.session_state.btfdMULTI_slider
 
-@st.cache_data(show_spinner=False)
-def compute_btfd_df(btc_full: pd.DataFrame, known_initial_ath: float):
-    df = btc_full[['Datetime', 'High', 'Close']].copy()
 
-    # --- ATH (globální přes celý dataset) ---
-    df['ATH'] = np.maximum(
-        df['High'].cummax(),
-        known_initial_ath
-    )
-    # --- BTFD ---
-    df['BTFD'] = (df['Close'] - df['ATH']) / df['ATH'] * 100
-
-    return df[['Datetime', 'BTFD']]
 
 # 1) základní BTFD (NEMĚNÍ SE)
-btfd_full = compute_btfd_df(btc_full, known_initial_ath)
+btfd_full = tr.compute_btfd_df(btc_full, known_initial_ath)
 
 # --- 3. Ořez btfd pro simulaci ---
 btfd_filter_key = f"{st.session_state.start_date}_{st.session_state.end_date}"
@@ -285,30 +262,12 @@ if'btfd_filtered' not in st.session_state or st.session_state.get('last_btfd_fil
 
 btfd = st.session_state.btfd_filtered
 
-@st.cache_data(show_spinner=False)
-def add_multiplier(btfd_df: pd.DataFrame, btfd_min: float, max_multiplier: float):
 
-    df = btfd_df.copy()
-
-    btfd = df['BTFD'].to_numpy()
-    denom = btfd_min if btfd_min != 0 else -1e-9
-
-    df['Multiplier'] = np.where(
-        btfd >= 0,
-        1.0,
-        np.where(
-            btfd <= btfd_min,
-            max_multiplier,
-            1.0 + (btfd / denom) * (max_multiplier - 1.0)
-        )
-    )
-
-    return df
 
 
 btfd_multiplier_key = f"{btfd_filter_key}_{BTFD_MIN}_{MAX_MULTIPLIER}"
 if 'btfd_with_multiplier' not in st.session_state or st.session_state.get('last_btfd_multiplier_key') != btfd_multiplier_key:
-    btfd_with_multiplier = add_multiplier(
+    btfd_with_multiplier = tr.add_multiplier(
         btfd,
         BTFD_MIN,
         MAX_MULTIPLIER
@@ -420,45 +379,34 @@ weight_sets = ((0.00, 1.00, 0.00, 0.00, 0.00, 0.00),)
 limit_multipliers = np.array([1 - lvl / 100 for lvl in limit_levels])
     
 last_price = btc.iloc[-1]['Close']
-ref_times = tr.get_reference_times(btc, hour=HOUR)
-ref_index = tuple(ref_times['index'])
+ref_positions = np.where(btc['Datetime'].dt.hour == HOUR)[0]
 
-# =========================
-# ⚡ FAST HASH
-# =========================
 def df_to_hash(df: pd.DataFrame) -> int:
     return hash((tuple(df.columns), tuple(df.to_numpy().flatten())))
 
-# =========================
-# 🎯 MARKET SETS CACHE
-# =========================
-@st.cache_data(hash_funcs={tuple: hash})
-def generate_market_sets(limit_levels, weights):
-    nonzero = tuple(lvl for lvl, w in zip(limit_levels, weights) if w > 0)
-    return tuple(frozenset(combo) for r in range(len(nonzero) + 1) for combo in combinations(nonzero, r))
+@st.cache_data
+def build_market_mask(limit_levels, market_set):
+    return np.array([lvl in market_set for lvl in limit_levels], dtype=np.bool_)
 
-
-# =========================
-# 🚀 CORE SIMULATION (CACHE)
-# =========================
 @st.cache_data(hash_funcs={pd.DataFrame: df_to_hash, tuple: hash, frozenset: lambda x: hash(tuple(sorted(x)))})
 
 def simulate_configuration(
     weights,
     market_set,
     btc,
-    ref_index,
+    ref_positions,
     limit_levels,
+    limit_multipliers,
     invest,
     btfd_multipliers,
     fee_limit,
     fee_market,
     last_price
 ):
-    market_mask = np.array([lvl in market_set for lvl in limit_levels], dtype=np.bool_)
-
+    market_mask = build_market_mask(limit_levels, market_set)
+    
     # --- použij list, simulate_day_hourly do něj appenduje ---
-    n_days = len(ref_index)
+    n_days = len(ref_positions)
 
     avg_prices_series = np.empty((n_days-1), dtype=np.float64)
     total_btc = total_cost = count_days = 0
@@ -466,10 +414,11 @@ def simulate_configuration(
 
     fills_sum = np.zeros(len(limit_levels), dtype=np.float32)
 
-    for day_i, idx in enumerate(ref_index):
-        start_idx = index_map[idx]
+    simulate_day = tr.simulate_day_hourly
 
-        res = tr.simulate_day_hourly(
+    for day_i, start_idx in enumerate(ref_positions):
+
+        res = simulate_day(
             btc,
             start_idx,
             weights,
@@ -519,24 +468,20 @@ def simulate_configuration(
         "percent_market_invest": 100 * total_market / total_cost if total_cost else 0,
     }
 
-# =========================
-# 🧠 BACKTEST
-# =========================
 def run_backtest():
     results = []
 
-    ref_index = tuple(ref_times['index'])
-
     for i, weights in enumerate(weight_sets):
-        market_sets = generate_market_sets(limit_levels, weights)
+        market_sets = tr.generate_market_sets(limit_levels, weights)
         for market_set in market_sets:
             #print(f"\nTestuji váhovou sadu {i + 1}/{len(weight_sets)}: {weights}")
             res = simulate_configuration(
                 weights,
                 market_set,
                 btc,
-                ref_index,
+                ref_positions,
                 limit_levels,
+                limit_multipliers,
                 INVEST_PER_DAY,
                 multipliers,
                 FEE_LIMIT,
@@ -549,9 +494,6 @@ def run_backtest():
 
     return results
 
-# =========================
-# ▶ RUN
-# =========================
 results = run_backtest()
 
 # --- 1. TOP podle průměrné ceny ---
@@ -622,7 +564,6 @@ mean_multiplier = btfd['Multiplier'].mean()
 #
 #
 # Vezmeme všechny multiplikátory
-multipliers = btfd['Multiplier'].to_numpy()
 adjusted_investments = multipliers * INVEST_PER_DAY
 # Medián denní investice
 median_daily_invest = np.median(adjusted_investments)

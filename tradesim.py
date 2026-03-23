@@ -5,6 +5,7 @@ from binance.client import Client
 from datetime import timezone
 import os
 import socket
+from itertools import combinations
 
 # detekce Streamlit Cloud
 def is_cloud():
@@ -140,7 +141,6 @@ def simulate_day_hourly(data, start_idx, weights, market_mask, invest_per_day,li
     if len(day_data) < 2:
         return None
 
-    start_time = data.iloc[start_idx]['Datetime']
     ref_price = data.iloc[start_idx]['Open']
 
     invest_per_day = invest_per_day * btfd_multipliers[btfd_i]
@@ -184,3 +184,47 @@ def simulate_day_hourly(data, start_idx, weights, market_mask, invest_per_day,li
     
 
     return btc_bought, cost, fills, invest_limit_total, invest_market_total
+
+@st.cache_data(show_spinner=False)
+def compute_btfd_df(btc_full: pd.DataFrame, known_initial_ath: float):
+    df = btc_full[['Datetime', 'High', 'Close']].copy()
+
+    # --- ATH (globální přes celý dataset) ---
+    df['ATH'] = np.maximum(
+        df['High'].cummax(),
+        known_initial_ath
+    )
+    # --- BTFD ---
+    df['BTFD'] = (df['Close'] - df['ATH']) / df['ATH'] * 100
+
+    return df[['Datetime', 'BTFD']]
+
+@st.cache_data(show_spinner=False)
+def add_multiplier(btfd_df: pd.DataFrame, btfd_min: float, max_multiplier: float):
+
+    df = btfd_df.copy()
+
+    btfd = df['BTFD'].to_numpy()
+    denom = btfd_min if btfd_min != 0 else -1e-9
+
+    df['Multiplier'] = np.where(
+        btfd >= 0,
+        1.0,
+        np.where(
+            btfd <= btfd_min,
+            max_multiplier,
+            1.0 + (btfd / denom) * (max_multiplier - 1.0)
+        )
+    )
+
+    return df
+
+@st.cache_data(hash_funcs={tuple: hash})
+def generate_market_sets(limit_levels, weights):
+    nonzero = tuple(lvl for lvl, w in zip(limit_levels, weights) if w > 0)
+    return tuple(frozenset(combo) for r in range(len(nonzero) + 1) for combo in combinations(nonzero, r))
+
+
+
+
+
