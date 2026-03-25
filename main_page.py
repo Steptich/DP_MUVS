@@ -403,13 +403,50 @@ if 'btfd_plot_key' not in st.session_state or st.session_state.btfd_plot_key != 
     )
 
     
-    invest_fig = px.line(
+    buy_fig = px.line(
         btfd_thinned,
         x="Datetime",
         y=btfd_thinned["Multiplier"]*INVEST_PER_DAY
     )
-    invest_fig.add_hline(y=INVEST_PER_DAY, line_color="#F7931A", annotation_text=f"Fixní investice: {INVEST_PER_DAY} USD", annotation_position="bottom right")
+    buy_fig.add_hline(y=INVEST_PER_DAY, line_color="#F7931A", annotation_text=f"Fixní investice: {INVEST_PER_DAY} USD", annotation_position="bottom right")
     
+    buy_fig.update_xaxes(
+        tickformat="%d.%m.%Y",   # formát osy
+        showgrid=True,            # zapnutí vertikálních grid line
+        gridwidth=1,              # tloušťka gridu
+        tickangle=-45             # naklonění tick labelů
+    )
+
+    buy_fig.update_layout(
+        xaxis_title="Čas",
+        yaxis_title="Nákupní částka [USD]",
+        hovermode="x unified"
+    )   
+
+    buy_fig.update_traces(
+        line=dict(color="green", width=1.5),
+        customdata=btc_thinned['date_cz'],
+        hovertemplate=(
+            "<b>Investovaná částka:</b> %{y:.2f} USD<br>" +
+            "<b>Datum:</b> %{customdata}" +
+            "<extra></extra>"
+        )
+    )
+    
+    invest_fig = px.line(
+        btfd_thinned,
+        x="Datetime",
+        y="Cumulative",
+        color_discrete_sequence=["green"]
+    )
+    invest_fig.add_scatter(
+        x=btfd_thinned["Datetime"],
+        y=INVEST_PER_DAY * np.arange(1, len(btfd_thinned) + 1),
+        mode="lines",
+        line=dict(color="#F7931A"),
+        name=f"Fixní investice: {INVEST_PER_DAY} USD"
+    )    
+
     invest_fig.update_xaxes(
         tickformat="%d.%m.%Y",   # formát osy
         showgrid=True,            # zapnutí vertikálních grid line
@@ -419,22 +456,38 @@ if 'btfd_plot_key' not in st.session_state or st.session_state.btfd_plot_key != 
 
     invest_fig.update_layout(
         xaxis_title="Čas",
-        yaxis_title="Ivestovaná částka [USD]",
-        hovermode="x unified"
+        yaxis_title="Investovaná částka [USD]",
+        hovermode="x unified",
+        legend=dict(
+            x=0.01,
+            y=0.99,
+            xanchor="left",
+            yanchor="top",
+        )
     )   
 
-    invest_fig.update_traces(
-        line=dict(color="green", width=1.5),
+    invest_fig.data[0].update(
         customdata=btc_thinned['date_cz'],
+        name="Dynamická investice",
+        showlegend=True,
         hovertemplate=(
-            "<b>Investovaná částka:</b> %{y:.2f} USD<br>" +
+            "<b>Celkově investováno (dynamická částka):</b> %{y:.2f} USD<br>" +
             "<b>Datum:</b> %{customdata}" +
             "<extra></extra>"
         )
-    )    
+    ) 
+    invest_fig.data[1].update(
+        customdata=btc_thinned['date_cz'],
+        hovertemplate=(
+            "<b>Celkově investováno (fixní částka):</b> %{y:.2f} USD<br>" +
+            "<b>Datum:</b> %{customdata}" +
+            "<extra></extra>"
+        )
+    )  
 
     st.session_state.btfd_fig = btfd_fig
     st.session_state.multiplier_fig = multiplier_fig        
+    st.session_state.buy_fig = buy_fig
     st.session_state.invest_fig = invest_fig
     st.session_state.btfd_plot_key = plot_key1
 
@@ -445,7 +498,12 @@ with tab2:
     st.plotly_chart(st.session_state.multiplier_fig, key="multiplier_plot")
 
 with tab3:
+    st.plotly_chart(st.session_state.buy_fig, key="buy_plot")
+
+with tab4:
     st.plotly_chart(st.session_state.invest_fig, key="invest_plot")
+
+
 # --- Inicializace session_state pro fee_limit ---
 if "fee_limit_slider" not in st.session_state:
     st.session_state.fee_limit_slider = 0.4  # výchozí hodnota 0.4 %
