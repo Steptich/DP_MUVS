@@ -340,7 +340,8 @@ if 'btfd_plot_key' not in st.session_state or st.session_state.btfd_plot_key != 
         y="BTFD",
     )
 
-    btfd_fig.add_hline(y=BTFD_MIN, line_dash="dash", line_color="red", annotation_text=f"Min: {BTFD_MIN} %", annotation_position="bottom right")
+    btfd_fig.add_hline(y=BTFD_MIN, line_dash="dash", line_color="red", annotation_text=f"{BTFD_MIN} %", annotation_position="bottom right")
+    btfd_fig.add_hline(y=0.0, line_dash="dash", line_color="red", annotation_text=f"0 %", annotation_position="bottom right")
     
     # formát osy X
     btfd_fig.update_xaxes(
@@ -374,6 +375,7 @@ if 'btfd_plot_key' not in st.session_state or st.session_state.btfd_plot_key != 
         y="Multiplier",
     )
     multiplier_fig.add_hline(y=MAX_MULTIPLIER, line_dash="dash", line_color="green", annotation_text=f"Max: {MAX_MULTIPLIER}x", annotation_position="bottom right")
+    multiplier_fig.add_hline(y=1.0, line_dash="dash", line_color="green", annotation_text=f"Min: 1.0x", annotation_position="bottom right")
     
     # formát osy X
     multiplier_fig.update_xaxes(
