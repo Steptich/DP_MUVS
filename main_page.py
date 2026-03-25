@@ -585,7 +585,7 @@ FEE_MARKET = st.session_state.fee_market_slider / 100
 
 
 limit_levels = (0, 1, 2, 3, 4, 5)
-weight_sets = ((0.00, 1.00, 0.00, 0.00, 0.00, 0.00),)
+weight_sets = ((1.00, 0.00, 0.00, 0.00, 0.00, 0.00),(0.00, 1.00, 0.00, 0.00, 0.00, 0.00),)
 limit_multipliers = np.array([1 - lvl / 100 for lvl in limit_levels])
     
 def df_to_hash(df: pd.DataFrame) -> int:
