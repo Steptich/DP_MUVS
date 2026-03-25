@@ -343,7 +343,7 @@ if 'btfd_plot_key' not in st.session_state or st.session_state.btfd_plot_key != 
     )
 
     btfd_fig.add_hline(y=BTFD_MIN, line_dash="dash", line_color="red", annotation_text=f"{BTFD_MIN} %", annotation_position="bottom right")
-    btfd_fig.add_hline(y=0.0, line_dash="dash", line_color="red", annotation_text=f"0 %", annotation_position="bottom right")
+    btfd_fig.add_hline(y=0.0, line_dash="dash", line_color="red", annotation_text=f"0 %", annotation_position="top right")
     
     # formát osy X
     btfd_fig.update_xaxes(
@@ -380,7 +380,7 @@ if 'btfd_plot_key' not in st.session_state or st.session_state.btfd_plot_key != 
         x="Datetime",
         y="Multiplier",
     )
-    multiplier_fig.add_hline(y=MAX_MULTIPLIER, line_dash="dash", line_color="green", annotation_text=f"Max: {MAX_MULTIPLIER}x", annotation_position="bottom right")
+    multiplier_fig.add_hline(y=MAX_MULTIPLIER, line_dash="dash", line_color="green", annotation_text=f"Max: {MAX_MULTIPLIER}x", annotation_position="top right")
     multiplier_fig.add_hline(y=1.0, line_dash="dash", line_color="green", annotation_text=f"Min: 1.0x", annotation_position="bottom right")
     
     # formát osy X
@@ -418,7 +418,7 @@ if 'btfd_plot_key' not in st.session_state or st.session_state.btfd_plot_key != 
         x="Datetime",
         y=btfd_thinned["Multiplier"]*INVEST_PER_DAY
     )
-    buy_fig.add_hline(y=INVEST_PER_DAY, line_color="#F7931A", annotation_text=f"Fixní investice: {INVEST_PER_DAY} USD", annotation_position="bottom right")
+    buy_fig.add_hline(y=INVEST_PER_DAY, line_dash="dash", line_color="#F7931A",  annotation_text=f"Fixní investice: {INVEST_PER_DAY} USD", annotation_position="bottom right")
     
     buy_fig.update_xaxes(
         tickformat="%d.%m.%Y",   # formát osy
@@ -458,6 +458,7 @@ if 'btfd_plot_key' not in st.session_state or st.session_state.btfd_plot_key != 
         y=INVEST_PER_DAY * np.arange(len(btfd_thinned)),
         mode="lines",
         line=dict(color="#F7931A"),
+        line_dash="dash",
         name=f"Fixní investice: {INVEST_PER_DAY} USD"
     )    
 
