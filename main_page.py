@@ -17,7 +17,7 @@ DATA_FILE = f"{SYMBOL}_full.csv"
 HISTORICAL_START = dt.datetime.strptime("2018-01-01", "%Y-%m-%d")
 HOUR = 8
 known_initial_ath=20089.0 #USD
-today = dt.datetime.now().replace(minute=0, second=0, microsecond=0)
+yesterday = dt.datetime.now().replace(hour=0,minute=0, second=0, microsecond=0) - dt.timedelta(hours=1)
 
 # --- Načtení dat s cache a po hodine znova---
 @st.cache_data(show_spinner=True,ttl=3600)
@@ -26,13 +26,13 @@ def load_btc_data():
         symbol=SYMBOL,
         file_path=DATA_FILE,
         start=HISTORICAL_START,
-        end=today,
+        end=yesterday,
         cloud_flag=tr.is_cloud()
     )
 btc_full = load_btc_data()
 print("Data načtena")
 
-last_dt = btc_full['Datetime'].max()
+last_dt = btc_full['Datetime'].max() - dt.timedelta(hours=(24-HOUR))
 year_before = last_dt - dt.timedelta(days=365)
 
 
