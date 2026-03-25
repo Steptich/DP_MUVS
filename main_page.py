@@ -17,7 +17,7 @@ DATA_FILE = f"{SYMBOL}_full.csv"
 HISTORICAL_START = dt.datetime.strptime("2018-01-01", "%Y-%m-%d")
 HOUR = 8
 known_initial_ath=20089.0 #USD
-yesterday = dt.datetime.now().replace(hour=0,minute=0, second=0, microsecond=0) - dt.timedelta(hours=1)
+today = dt.datetime.now().replace(hour=0,minute=0, second=0, microsecond=0)
 
 # --- Načtení dat s cache a po hodine znova---
 @st.cache_data(show_spinner=True,ttl=3600)
@@ -26,15 +26,15 @@ def load_btc_data():
         symbol=SYMBOL,
         file_path=DATA_FILE,
         start=HISTORICAL_START,
-        end=yesterday,
+        end=today,
         cloud_flag=tr.is_cloud()
     )
 btc_full = load_btc_data()
 print("Data načtena")
 
+#posledni mozny zaznam, po kterém nasleduje full cycle pro danou hour
 last_dt = btc_full['Datetime'].max() - dt.timedelta(hours=(24-HOUR))
 year_before = last_dt - dt.timedelta(days=365)
-
 
 # --- Mapping pevně definovaných období ---
 period_map = {
@@ -99,14 +99,13 @@ btc_filter_key = f"{st.session_state.start_date}_{st.session_state.end_date}"
 if 'btc_filtered' not in st.session_state or st.session_state.get('last_btc_filter_key') != btc_filter_key:
     st.session_state.btc_filtered = btc_full[
         (btc_full['Datetime'] >= pd.to_datetime(st.session_state.start_date)) &
-        (btc_full['Datetime'] <= pd.to_datetime(st.session_state.end_date))
+        (btc_full['Datetime'] <= pd.to_datetime(st.session_state.end_date+dt.timedelta(days=1)))  # přidáme 1 den, aby se zahrnul i poslední den do filtru
     ].sort_values('Datetime').drop_duplicates('Datetime').reset_index(drop=True)
     st.session_state.last_btc_filter_key = btc_filter_key
 
 btc = st.session_state.btc_filtered
 last_price = btc.iloc[-1]['Close']
 ref_positions = np.where(btc['Datetime'].dt.hour == HOUR)[0]
-
 
 print(f"Počet záznamů pro simulaci: {len(btc)}")
 
@@ -281,14 +280,11 @@ btfd_filter_key = f"{st.session_state.start_date}_{st.session_state.end_date}"
 if'btfd_filtered' not in st.session_state or st.session_state.get('last_btfd_filter_key') != btfd_filter_key:
     st.session_state.btfd_filtered = btfd_full[
         (btfd_full['Datetime'] >= pd.to_datetime(st.session_state.start_date)) &
-        (btfd_full['Datetime'] <= pd.to_datetime(st.session_state.end_date))
+        (btfd_full['Datetime'] <= pd.to_datetime(st.session_state.end_date+dt.timedelta(days=1)))
     ].sort_values('Datetime').drop_duplicates('Datetime').reset_index(drop=True)
     st.session_state.last_btfd_filter_key = btfd_filter_key
 
 btfd = st.session_state.btfd_filtered
-
-
-
 
 btfd_multiplier_key = f"{btfd_filter_key}_{BTFD_MIN}_{MAX_MULTIPLIER}"
 if 'btfd_with_multiplier' not in st.session_state or st.session_state.get('last_btfd_multiplier_key') != btfd_multiplier_key:
