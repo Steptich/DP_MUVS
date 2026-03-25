@@ -710,31 +710,31 @@ def run_backtest():
 
 results = run_backtest()
 
-# --- 1. TOP podle průměrné ceny ---
-top_price = sorted(results, key=lambda x: x['avg_price_series'][-1])[:5]
-
-st.write("## 📊 TOP 5 strategií podle průměrné nákupní ceny")
-for i, r in enumerate(top_price, 1):
-    fills = {k: round(v * 100, 1) for k, v in r['avg_fill_rate'].items()}
-    st.write(f"**{i}. Váhy:** {list(r['weights'])}, **Tržní nákup:** {list(r['market_buy_for'])}")
-    st.write(f"- Průměrná cena: {r['avg_price_series'][-1]:.2f} USD")
-    st.write(f"- Celkové BTC: {r['total_btc']:.6f}")
-    st.write(f"- Celkově vložený kapitál: {r['total_cost']:.2f} USD")
-    st.write(f"- Počet dnů: {r['days']}")
-    st.write(f"- Celkový zisk: {r['total_profit']:.2f} USD")
-    st.write(f"- ROI: {r['ROI']:.2f} %")
-    st.write(f"- ROI p.a.: {r['ROI_pa']:.2f} %")
-    st.write(f"- Využití kapitálu: {r['efficiency']:.2f} %")
-    if r['uninvested_amount'] > 0:
-        st.write(f"- Neinvestováno: {r['uninvested_amount']:.2f} USD")
-    else:
-        st.write(f"- Přebytečně investováno: {-r['uninvested_amount']:.2f} USD")
-    st.write(f"- Celkem: {r['total_amount']:.2f} USD")
-    st.write(f"- Naplňění limitných příkazů: {fills}")
-    st.write(f"- Limit %: {r['percent_limit_invest']:.1f} %")
-    st.write(f"- Market %: {r['percent_market_invest']:.1f} %")
-    st.write("---")
-
+## --- 1. TOP podle průměrné ceny ---
+#top_price = sorted(results, key=lambda x: x['avg_price_series'][-1])[:5]
+#
+#st.write("## 📊 TOP 5 strategií podle průměrné nákupní ceny")
+#for i, r in enumerate(top_price, 1):
+#    fills = {k: round(v * 100, 1) for k, v in r['avg_fill_rate'].items()}
+#    st.write(f"**{i}. Váhy:** {list(r['weights'])}, **Tržní nákup:** {list(r['market_buy_for'])}")
+#    st.write(f"- Průměrná cena: {r['avg_price_series'][-1]:.2f} USD")
+#    st.write(f"- Celkové BTC: {r['total_btc']:.6f}")
+#    st.write(f"- Celkově vložený kapitál: {r['total_cost']:.2f} USD")
+#    st.write(f"- Počet dnů: {r['days']}")
+#    st.write(f"- Celkový zisk: {r['total_profit']:.2f} USD")
+#    st.write(f"- ROI: {r['ROI']:.2f} %")
+#    st.write(f"- ROI p.a.: {r['ROI_pa']:.2f} %")
+#    st.write(f"- Využití kapitálu: {r['efficiency']:.2f} %")
+#    if r['uninvested_amount'] > 0:
+#        st.write(f"- Neinvestováno: {r['uninvested_amount']:.2f} USD")
+#    else:
+#        st.write(f"- Přebytečně investováno: {-r['uninvested_amount']:.2f} USD")
+#    st.write(f"- Celkem: {r['total_amount']:.2f} USD")
+#    st.write(f"- Naplňění limitných příkazů: {fills}")
+#    st.write(f"- Limit %: {r['percent_limit_invest']:.1f} %")
+#    st.write(f"- Market %: {r['percent_market_invest']:.1f} %")
+#    st.write("---")
+#
 ## --- 2. TOP podle BTC ---
 #top_btc = sorted(results, key=lambda x: x['total_btc'], reverse=True)[:5]
 #
