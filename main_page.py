@@ -137,21 +137,25 @@ if 'btc_plot_key' not in st.session_state or st.session_state.btc_plot_key != pl
         btc_thinned['Datetime'].dt.month.map(cz_months) + " " +
         btc_thinned['Datetime'].dt.year.astype(str)
     )
-
+   
     btc_fig = px.line(
         btc_thinned,
         x="Datetime",
         y="Close",
     )
-
+    
     # formát osy X
     btc_fig.update_xaxes(
         tickformat="%d.%m.%Y",   # formát osy
         showgrid=True,            # zapnutí vertikálních grid line
         gridwidth=1,              # tloušťka gridu
-        tickangle=-45             # naklonění tick labelů
+        tickangle=-45,             # naklonění tick labelů
+        range=[
+            btc_thinned["Datetime"].min(),
+            btc_thinned["Datetime"].max()+ dt.timedelta(days=2)
+        ]
     )
-
+    
     btc_fig.update_layout(
         xaxis_title="Čas",
         yaxis_title="Cena (USD)",
@@ -348,7 +352,11 @@ if 'btfd_plot_key' not in st.session_state or st.session_state.btfd_plot_key != 
         tickformat="%d.%m.%Y",   # formát osy
         showgrid=True,            # zapnutí vertikálních grid line
         gridwidth=1,              # tloušťka gridu
-        tickangle=-45             # naklonění tick labelů
+        tickangle=-45,            # naklonění tick labelů
+        range=[
+            btfd_thinned["Datetime"].min(),
+            btfd_thinned["Datetime"].max()+ dt.timedelta(days=2)
+        ]
     )
 
     btfd_fig.update_layout(
@@ -382,7 +390,11 @@ if 'btfd_plot_key' not in st.session_state or st.session_state.btfd_plot_key != 
         tickformat="%d.%m.%Y",   # formát osy
         showgrid=True,            # zapnutí vertikálních grid line
         gridwidth=1,              # tloušťka gridu
-        tickangle=-45             # naklonění tick labelů
+        tickangle=-45,            # naklonění tick labelů
+        range=[
+            btfd_thinned["Datetime"].min(),
+            btfd_thinned["Datetime"].max()+ dt.timedelta(days=2)
+        ]
     )
 
     multiplier_fig.update_layout(
@@ -414,7 +426,11 @@ if 'btfd_plot_key' not in st.session_state or st.session_state.btfd_plot_key != 
         tickformat="%d.%m.%Y",   # formát osy
         showgrid=True,            # zapnutí vertikálních grid line
         gridwidth=1,              # tloušťka gridu
-        tickangle=-45             # naklonění tick labelů
+        tickangle=-45,             # naklonění tick labelů
+        range=[
+            btc_thinned["Datetime"].min(),
+            btc_thinned["Datetime"].max()+ dt.timedelta(days=2)
+        ]
     )
 
     buy_fig.update_layout(
@@ -451,7 +467,11 @@ if 'btfd_plot_key' not in st.session_state or st.session_state.btfd_plot_key != 
         tickformat="%d.%m.%Y",   # formát osy
         showgrid=True,            # zapnutí vertikálních grid line
         gridwidth=1,              # tloušťka gridu
-        tickangle=-45             # naklonění tick labelů
+        tickangle=-45,            # naklonění tick labelů
+        range=[
+            btfd_thinned["Datetime"].min(),
+            btfd_thinned["Datetime"].max()+ dt.timedelta(days=2)
+        ]
     )
 
     invest_fig.update_layout(
