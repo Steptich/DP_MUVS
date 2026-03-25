@@ -104,6 +104,10 @@ if 'btc_filtered' not in st.session_state or st.session_state.get('last_btc_filt
     st.session_state.last_btc_filter_key = btc_filter_key
 
 btc = st.session_state.btc_filtered
+last_price = btc.iloc[-1]['Close']
+ref_positions = np.where(btc['Datetime'].dt.hour == HOUR)[0]
+
+
 print(f"Počet záznamů pro simulaci: {len(btc)}")
 
 
@@ -116,7 +120,8 @@ cz_months = {
 
 # data (1x denně)
 if 'btc_thinned' not in st.session_state or st.session_state.get('last_btc_filter_key_thinned') != btc_filter_key:
-    st.session_state.btc_thinned = btc.iloc[::24].copy()
+    btc["hour"] = btc["Datetime"].dt.hour
+    st.session_state.btc_thinned = btc[btc["hour"] == HOUR].copy()
     st.session_state.last_btc_filter_key_thinned = btc_filter_key
 
 btc_thinned = st.session_state.btc_thinned
@@ -295,9 +300,23 @@ btfd = st.session_state.btfd_with_multiplier
 
 multipliers = btfd['Multiplier'].to_numpy()
 
-btfd_thinned = btfd.iloc[::24].copy()
+btfd_thinned_key = f"{btfd_multiplier_key}_{INVEST_PER_DAY}_24"
 
-tab1, tab2,tab3 = st.tabs(["BTFD", "Multiplikátor","Investovaná částka"])
+if ('btfd_thinned' not in st.session_state
+    or st.session_state.get('last_btfd_thinned_key') != btfd_thinned_key
+):
+    btfd["hour"] = btfd["Datetime"].dt.hour
+    btfd_thinned = btfd[btfd["hour"] == HOUR].copy()
+    btfd_thinned["Cumulative"] = (
+        btfd_thinned["Multiplier"] * INVEST_PER_DAY
+    ).cumsum()
+
+    st.session_state.btfd_thinned = btfd_thinned
+    st.session_state.last_btfd_thinned_key = btfd_thinned_key
+
+btfd_thinned = st.session_state.btfd_thinned
+
+tab1, tab2, tab3, tab4 = st.tabs(["BTFD", "Multiplikátor","Nákupní částka", "Investovaná částka"])
 
 plot_key1 = (
     f"{st.session_state.start_date}_{st.session_state.end_date}_"
@@ -509,9 +528,6 @@ limit_levels = (0, 1, 2, 3, 4, 5)
 weight_sets = ((0.00, 1.00, 0.00, 0.00, 0.00, 0.00),)
 limit_multipliers = np.array([1 - lvl / 100 for lvl in limit_levels])
     
-last_price = btc.iloc[-1]['Close']
-ref_positions = np.where(btc['Datetime'].dt.hour == HOUR)[0]
-
 def df_to_hash(df: pd.DataFrame) -> int:
     return hash((tuple(df.columns), tuple(df.to_numpy().flatten())))
 
