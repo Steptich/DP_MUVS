@@ -308,8 +308,10 @@ if ('btfd_thinned' not in st.session_state
     btfd["hour"] = btfd["Datetime"].dt.hour
     btfd_thinned = btfd[btfd["hour"] == HOUR].copy()
     btfd_thinned["Cumulative"] = (
-        btfd_thinned["Multiplier"] * INVEST_PER_DAY
-    ).cumsum()
+    (btfd_thinned["Multiplier"] * INVEST_PER_DAY)
+    .cumsum()
+    .shift(1, fill_value=0)
+    )
 
     st.session_state.btfd_thinned = btfd_thinned
     st.session_state.last_btfd_thinned_key = btfd_thinned_key
@@ -453,7 +455,7 @@ if 'btfd_plot_key' not in st.session_state or st.session_state.btfd_plot_key != 
     )
     invest_fig.add_scatter(
         x=btfd_thinned["Datetime"],
-        y=INVEST_PER_DAY * np.arange(1, len(btfd_thinned) + 1),
+        y=INVEST_PER_DAY * np.arange(len(btfd_thinned)),
         mode="lines",
         line=dict(color="#F7931A"),
         name=f"Fixní investice: {INVEST_PER_DAY} USD"
