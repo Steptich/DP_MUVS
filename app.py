@@ -1,7 +1,9 @@
 import streamlit as st
-from theme import theme_button
+from streamlit import sidebar
+from theme import theme_mode
 
-theme_button()  
+with sidebar:
+    theme_mode()
 
 # Define the pages
 page_1 = st.Page("page_1.py", title="DCA Kalkulačka", icon="🎈")
