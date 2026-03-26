@@ -425,21 +425,34 @@ if 'btfd_plot_key' not in st.session_state or st.session_state.btfd_plot_key != 
             "<extra></extra>"
         )
     )
-    
-    invest_fig = px.line(
-        btfd_thinned,
-        x="Datetime",
-        y="Cumulative",
-        color_discrete_sequence=["green"]
+
+    invest_fig = go.Figure()
+
+    # --- spodní: dynamická (plná) ---
+    invest_fig.add_trace(
+        go.Scatter(
+            x=btfd_thinned["Datetime"],
+            y=btfd_thinned["Cumulative"],
+            mode="lines",
+            line=dict(color="green", width=1.5),
+            name="Dynamická investice",
+            customdata=btc_thinned['date_cz'],
+            hovertemplate="<b>Celkově investováno (dynamická částka):</b> %{y:.2f} USD<br><b>Datum:</b> %{customdata}<extra></extra>"
+        )
     )
-    invest_fig.add_scatter(
-        x=btfd_thinned["Datetime"],
-        y=INVEST_PER_DAY * np.arange(len(btfd_thinned)),
-        mode="lines",
-        line=dict(color="#F7931A"),
-        line_dash="dash",
-        name=f"Fixní investice: {INVEST_PER_DAY} USD"
-    )    
+
+    # --- vrchní: fixní (dash) ---
+    invest_fig.add_trace(
+        go.Scatter(
+            x=btfd_thinned["Datetime"],
+            y=INVEST_PER_DAY * np.arange(len(btfd_thinned)),
+            mode="lines",
+            line=dict(color="#F7931A", dash="dash", width=1.5),
+            name=f"Fixní investice: {INVEST_PER_DAY} USD",
+            customdata=btc_thinned['date_cz'],
+            hovertemplate="<b>Celkově investováno (fixní částka):</b> %{y:.2f} USD<br><b>Datum:</b> %{customdata}<extra></extra>"
+        )
+    )
 
     invest_fig.update_xaxes(
         tickformat="%d.%m.%Y",   # formát osy
