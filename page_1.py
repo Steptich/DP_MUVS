@@ -1,7 +1,9 @@
 import streamlit as st
 import datetime as dt
 import tradesim as tr
+from tradesim import HOUR, known_initial_ath, HISTORICAL_START
 import plotly.express as px
+import plotly.graph_objects as go
 import pandas as pd
 import numpy as np
 import time
@@ -11,31 +13,17 @@ st.header("HANIČKA JE ŠIKULKA")
 
 start = time.time()
 
-# --- Nastavení ---
-SYMBOL = "BTCUSDT"
-DATA_FILE = f"{SYMBOL}_full.csv"
-HISTORICAL_START = dt.datetime.strptime("2018-01-01", "%Y-%m-%d")
-HOUR = 8
-known_initial_ath=20089.0 #USD
-today = dt.datetime.now().replace(hour=0,minute=0, second=0, microsecond=0)
+btc_full = tr.load_btc_data()
 
-# --- Načtení dat s cache a po hodine znova---
-@st.cache_data(show_spinner=True,ttl=3600)
-def load_btc_data():
-    return tr.load_and_update_data(
-        symbol=SYMBOL,
-        file_path=DATA_FILE,
-        start=HISTORICAL_START,
-        end=today,
-        cloud_flag=tr.is_cloud()
-    )
-btc_full = load_btc_data()
-print("Data načtena")
-
-#posledni mozny zaznam, po kterém nasleduje full cycle pro danou hour
+btc = tr.get_filtered_data(
+    btc_full,
+    st.session_state.start_date,
+    st.session_state.end_date
+)
 last_dt = btc_full['Datetime'].max() - dt.timedelta(hours=(24-HOUR))
 year_before = last_dt - dt.timedelta(days=365)
-
+last_price = btc.iloc[-1]['Close']
+ref_positions = np.where(btc['Datetime'].dt.hour == HOUR)[0]
 # --- Mapping pevně definovaných období ---
 period_map = {
     "1 roku": 365,
@@ -94,18 +82,8 @@ elif date_option == "Vlastní období":
         on_change=on_end_change,
     )
 
-# --- 3. Ořez datasetu pro simulaci ---
-btc_filter_key = f"{st.session_state.start_date}_{st.session_state.end_date}"
-if 'btc_filtered' not in st.session_state or st.session_state.get('last_btc_filter_key') != btc_filter_key:
-    st.session_state.btc_filtered = btc_full[
-        (btc_full['Datetime'] >= pd.to_datetime(st.session_state.start_date)) &
-        (btc_full['Datetime'] <= pd.to_datetime(st.session_state.end_date+dt.timedelta(days=1)))  # přidáme 1 den, aby se zahrnul i poslední den do filtru
-    ].sort_values('Datetime').drop_duplicates('Datetime').reset_index(drop=True)
-    st.session_state.last_btc_filter_key = btc_filter_key
 
-btc = st.session_state.btc_filtered
-last_price = btc.iloc[-1]['Close']
-ref_positions = np.where(btc['Datetime'].dt.hour == HOUR)[0]
+
 
 print(f"Počet záznamů pro simulaci: {len(btc)}")
 
@@ -118,6 +96,7 @@ cz_months = {
 }
 
 # data (1x denně)
+btc_filter_key = f"{st.session_state.start_date}_{st.session_state.end_date}"
 if 'btc_thinned' not in st.session_state or st.session_state.get('last_btc_filter_key_thinned') != btc_filter_key:
     btc["hour"] = btc["Datetime"].dt.hour
     st.session_state.btc_thinned = btc[btc["hour"] == HOUR].copy()

@@ -6,6 +6,33 @@ from datetime import timezone
 import os
 import socket
 from itertools import combinations
+import datetime as dt
+
+# --- Nastavení ---
+SYMBOL = "BTCUSDT"
+DATA_FILE = f"{SYMBOL}_full.csv"
+HISTORICAL_START = dt.datetime.strptime("2018-01-01", "%Y-%m-%d")
+HOUR = 8
+known_initial_ath=20089.0 #USD
+today = dt.datetime.now().replace(hour=0,minute=0, second=0, microsecond=0)
+
+# --- Načtení dat s cache a po hodine znova---
+@st.cache_data(show_spinner=True,ttl=3600)
+def load_btc_data():
+    return load_and_update_data(
+        symbol=SYMBOL,
+        file_path=DATA_FILE,
+        start=HISTORICAL_START,
+        end=today,
+        cloud_flag=is_cloud()
+    )
+
+@st.cache_data
+def get_filtered_data(df, start, end):
+    return df[
+        (df['Datetime'] >= pd.to_datetime(start)) &
+        (df['Datetime'] <= pd.to_datetime(end+dt.timedelta(days=1)))  # přidáme 1 den, aby se zahrnul i poslední den do filtru
+    ].sort_values('Datetime').drop_duplicates('Datetime').reset_index(drop=True)
 
 # detekce Streamlit Cloud
 def is_cloud():
