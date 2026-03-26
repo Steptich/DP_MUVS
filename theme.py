@@ -7,6 +7,7 @@ def theme_button():
     # --- Inicializace témat ---
     if "themes" not in ms:
         ms.themes = {
+            "name": None,
             "current_theme": None,
             "refreshed": True,
             "light": {
@@ -31,12 +32,13 @@ def theme_button():
                 st._config.set_option(vkey, vval)
 
         ms.themes["current_theme"] = "dark" if previous_theme == "light" else "light"
+        ms.themes["name"] = "Tmavý motiv" if previous_theme == "light" else "Světlý motiv"
         ms.themes["refreshed"] = False
 
     # --- První run (fallback) ---
     if ms.themes["current_theme"] is None:
         ms.themes["current_theme"] = "light"
-
+        ms.themes["name"] = "Světlý motiv"
         tdict = ms.themes["dark"]
         for vkey, vval in tdict.items():
             if vkey.startswith("theme"):
@@ -51,7 +53,7 @@ def theme_button():
         else ms.themes["dark"]["button_face"]
     )
 
-    st.sidebar.button(btn_face, on_click=ChangeTheme)
+    st.sidebar.button(label=f"{ms.themes["name"]}",icon=btn_face, on_click=ChangeTheme)
 
     # --- Rerun ---
     if ms.themes["refreshed"] == False:
