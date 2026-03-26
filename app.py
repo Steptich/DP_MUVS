@@ -10,7 +10,7 @@ page_3 = st.Page("page_3.py", title="Srovnávač strategií", icon="🎉")
 
 
 # Set up navigation
-pg = st.navigation(position="sidebar",pages=[page_1, page_2, page_3])
+pg = st.navigation(position="top",pages=[page_1, page_2, page_3],expanded=True)
 
 # Run the selected page
 pg.run()
