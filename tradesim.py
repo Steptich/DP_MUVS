@@ -157,7 +157,7 @@ def get_reference_times(df, hour):
     refs = df[df['Hour'] == hour].copy()
     return refs.reset_index()
 
-def simulate_day_hourly(data, start_idx, weights, market_mask, invest_per_day,limit_levels,limit_multipliers,btfd_multipliers,fee_limit,fee_market):
+def simulate_day_hourly(data, start_idx, weights, market_mask, invest_per_day,limit_levels,limit_multipliers,btfd,fee_limit,fee_market):
     end_idx = start_idx + 24
 
     if end_idx > len(data):
@@ -178,6 +178,8 @@ def simulate_day_hourly(data, start_idx, weights, market_mask, invest_per_day,li
 
     invest_limit_total = 0  # investice přes limitní nákup
     invest_market_total = 0  # investice přes tržní nákup
+    btfd_value = 0.0
+    btfd_multiplier = 0.0
     limit_prices = ref_price * limit_multipliers
     for i in range(len(limit_levels)):
         w = weights[i]
@@ -188,16 +190,20 @@ def simulate_day_hourly(data, start_idx, weights, market_mask, invest_per_day,li
         hit_indices = np.where(lows <= limit_price)[0]
         if len(hit_indices) > 0:
             btfd_idx = start_idx  + hit_indices[0]
+            multiplier = btfd['Multiplier'][btfd_idx]
+            value = btfd['BTFD'][btfd_idx]
             buy_price = lows[hit_indices[0]]
             fills[i] = 1
-            invest_amount = invest_per_day * w * btfd_multipliers[btfd_idx]
+            invest_amount = invest_per_day * w * multiplier
             effective_invest = invest_amount * (1 - fee_limit)
             invest_limit_total += invest_amount
 
         elif market_mask[i]:
             btfd_idx = start_idx + len(closes) - 2
+            multiplier = btfd['Multiplier'][btfd_idx]
+            value = btfd['BTFD'][btfd_idx]
             buy_price = closes[-2]
-            invest_amount = invest_per_day * w * btfd_multipliers[btfd_idx]
+            invest_amount = invest_per_day * w * multiplier
             effective_invest = invest_amount * (1 - fee_market)
             invest_market_total += invest_amount
 
@@ -206,12 +212,14 @@ def simulate_day_hourly(data, start_idx, weights, market_mask, invest_per_day,li
 
         btc_bought = effective_invest / buy_price
         cost = invest_amount
+        btfd_multiplier = multiplier
+        btfd_value = value
 
     if btc_bought == 0:
         return None
     
 
-    return btc_bought, cost, fills, invest_limit_total, invest_market_total
+    return btc_bought, cost, fills, invest_limit_total, invest_market_total, btfd_value, btfd_multiplier
 
 @st.cache_data(show_spinner=False)
 def compute_btfd_df(btc_full: pd.DataFrame, known_initial_ath: float):

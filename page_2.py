@@ -414,7 +414,7 @@ def simulate_configuration(
         limit_levels,
         limit_multipliers,
         invest,
-        btfd_multipliers,
+        btfd,
         fee_limit,
         fee_market
 ):
@@ -426,6 +426,8 @@ def simulate_configuration(
     avg_prices_series = np.zeros((n_days), dtype=np.float64)
     total_cost_series = np.zeros((n_days), dtype=np.float64)
     total_btc_series = np.zeros((n_days), dtype=np.float64)
+    btfd_value_series = np.full((n_days,), -1, dtype=np.float64)
+    btfd_multiplier_series = np.zeros((n_days), dtype=np.float64)
 
     total_btc = total_cost = count_days = 0
     total_limit = total_market = 0
@@ -444,7 +446,7 @@ def simulate_configuration(
             invest,
             limit_levels,
             limit_multipliers,
-            btfd_multipliers,
+            btfd,
             fee_limit,
             fee_market
         )
@@ -453,13 +455,14 @@ def simulate_configuration(
             count_days = day_i  # posledni den nemusi byt nakup
             continue
 
-        btc_bought, cost, fills, inv_l, inv_m = res
+        btc_bought, cost, fills, inv_l, inv_m, btfd_value, btfd_multiplier = res
 
         total_btc += btc_bought
         total_cost += cost
         total_btc_series[day_i] = total_btc
         total_cost_series[day_i] = total_cost
-        avg_prices_series[day_i] = total_cost / total_btc
+        btfd_value_series[day_i] = btfd_value
+        btfd_multiplier_series[day_i] = btfd_multiplier
         count_days = day_i
         total_limit += inv_l
         total_market += inv_m
@@ -468,9 +471,9 @@ def simulate_configuration(
 
     if count_days == 0:
         return None
-    total_btc_series = total_btc_series[total_btc_series != 0]
-    total_cost_series = total_cost_series[total_cost_series != 0]
-    avg_prices_series = avg_prices_series[avg_prices_series != 0]
+    btfd_value_series = btfd_value_series[valid_mask]
+    btfd_multiplier_series = btfd_multiplier_series[valid_mask]
+
 
     return {
         "weights": weights,
@@ -478,6 +481,8 @@ def simulate_configuration(
         "total_cost_series": total_cost_series,
         "total_btc_series": total_btc_series,
         "avg_price_series": avg_prices_series,
+        "btfd_value_series": btfd_value_series,
+        "btfd_multiplier_series": btfd_multiplier_series,
         "total_btc": total_btc,
         "total_cost": total_cost,
         "days": count_days,
@@ -508,7 +513,7 @@ def run_backtest():
                 limit_levels,
                 limit_multipliers,
                 INVEST_PER_DAY,
-                multipliers,
+                btfd,
                 FEE_LIMIT,
                 FEE_MARKET
             )
