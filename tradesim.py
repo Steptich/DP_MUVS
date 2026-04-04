@@ -157,7 +157,7 @@ def get_reference_times(df, hour):
     refs = df[df['Hour'] == hour].copy()
     return refs.reset_index()
 
-def simulate_day_hourly(data, start_idx, weights, market_mask, invest_per_day,limit_levels,limit_multipliers,btfd_multipliers,fee_limit,fee_market,btfd_i):
+def simulate_day_hourly(data, start_idx, weights, market_mask, invest_per_day,limit_levels,limit_multipliers,btfd_multipliers,fee_limit,fee_market):
     end_idx = start_idx + 24
 
     if end_idx > len(data):
@@ -169,8 +169,6 @@ def simulate_day_hourly(data, start_idx, weights, market_mask, invest_per_day,li
         return None
 
     ref_price = data.iloc[start_idx]['Open']
-
-    invest_per_day = invest_per_day * btfd_multipliers[btfd_i]
 
     lows = day_data['Low'].values
     closes = day_data['Close'].values
@@ -187,16 +185,19 @@ def simulate_day_hourly(data, start_idx, weights, market_mask, invest_per_day,li
         if w == 0:
             continue
         limit_price = limit_prices[i]
-        invest_amount = w * invest_per_day
         hit_indices = np.where(lows <= limit_price)[0]
         if len(hit_indices) > 0:
+            btfd_idx = start_idx  + hit_indices[0]
             buy_price = lows[hit_indices[0]]
             fills[i] = 1
+            invest_amount = invest_per_day * w * btfd_multipliers[btfd_idx]
             effective_invest = invest_amount * (1 - fee_limit)
             invest_limit_total += invest_amount
 
         elif market_mask[i]:
+            btfd_idx = start_idx + len(closes) - 2
             buy_price = closes[-2]
+            invest_amount = invest_per_day * w * btfd_multipliers[btfd_idx]
             effective_invest = invest_amount * (1 - fee_market)
             invest_market_total += invest_amount
 

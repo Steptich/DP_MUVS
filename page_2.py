@@ -635,8 +635,7 @@ def simulate_configuration(
         invest,
         btfd_multipliers,
         fee_limit,
-        fee_market,
-        last_price
+        fee_market
 ):
     market_mask = build_market_mask(limit_levels, market_set)
 
@@ -665,8 +664,7 @@ def simulate_configuration(
             limit_multipliers,
             btfd_multipliers,
             fee_limit,
-            fee_market,
-            btfd_i=day_i,
+            fee_market
         )
 
         if res is None:
@@ -677,6 +675,7 @@ def simulate_configuration(
 
         total_btc += btc_bought
         total_cost += cost
+        total_btc_series[day_i] = total_btc
         total_cost_series[day_i] = total_cost
         avg_prices_series[day_i] = total_cost / total_btc
         count_days = day_i
@@ -687,14 +686,16 @@ def simulate_configuration(
 
     if count_days == 0:
         return None
-
+    total_btc_series = total_btc_series[total_btc_series != 0]
+    total_cost_series = total_cost_series[total_cost_series != 0]
     avg_prices_series = avg_prices_series[avg_prices_series != 0]
 
     return {
         "weights": weights,
         "market_buy_for": tuple(sorted(market_set)),
-        "avg_price_series": avg_prices_series,
         "total_cost_series": total_cost_series,
+        "total_btc_series": total_btc_series,
+        "avg_price_series": avg_prices_series,
         "total_btc": total_btc,
         "total_cost": total_cost,
         "days": count_days,
@@ -727,8 +728,7 @@ def run_backtest():
                 INVEST_PER_DAY,
                 multipliers,
                 FEE_LIMIT,
-                FEE_MARKET,
-                last_price
+                FEE_MARKET
             )
 
             if res:
