@@ -642,8 +642,9 @@ def simulate_configuration(
     # --- použij list, simulate_day_hourly do něj appenduje ---
     n_days = len(ref_positions)
 
-    avg_prices_series = np.empty((n_days), dtype=np.float64)
-    total_cost_series = np.empty((n_days), dtype=np.float64)
+    avg_prices_series = np.zeros((n_days), dtype=np.float64)
+    total_cost_series = np.zeros((n_days), dtype=np.float64)
+    total_btc_series = np.zeros((n_days), dtype=np.float64)
 
     total_btc = total_cost = count_days = 0
     total_limit = total_market = 0
