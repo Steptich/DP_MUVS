@@ -73,14 +73,15 @@ def theme_button():
     # --- Funkce pro změnu theme ---
     def ChangeTheme():
         previous_theme = ms.themes["current_theme"]
-        tdict = ms.themes["light"] if previous_theme == "light" else ms.themes["dark"]
+        new_theme = "dark" if previous_theme == "light" else "light"
 
+        tdict = ms.themes[new_theme]
         for vkey, vval in tdict.items():
             if vkey.startswith("theme"):
                 st._config.set_option(vkey, vval)
 
-        ms.themes["current_theme"] = "dark" if previous_theme == "light" else "light"
-        ms.themes["name"] = "Tmavý motiv" if previous_theme == "light" else "Světlý motiv"
+        ms.themes["current_theme"] = new_theme
+        ms.themes["name"] = "Tmavý motiv" if new_theme == "dark" else "Světlý motiv"
         ms.themes["refreshed"] = False
 
     # --- První run (fallback) ---
@@ -95,13 +96,16 @@ def theme_button():
         ms.themes["refreshed"] = False
 
     # --- Button ---
-    btn_face = (
-        ms.themes["light"]["button_face"]
-        if ms.themes["current_theme"] == "light"
-        else ms.themes["dark"]["button_face"]
-    )
+    current = ms.themes["current_theme"]
 
-    st.sidebar.button(label=f"{ms.themes["name"]}",icon=btn_face, on_click=ChangeTheme)
+    btn_face = ms.themes[current]["button_face"]
+    name = "Světlý motiv" if current == "light" else "Tmavý motiv"
+
+    st.sidebar.button(
+        label=name,
+        icon=btn_face,
+        on_click=ChangeTheme
+    )
 
     # --- Rerun ---
     if ms.themes["refreshed"] == False:
