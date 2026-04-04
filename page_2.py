@@ -390,225 +390,6 @@ st.slider(
 FEE_MARKET = st.session_state.fee_market_slider / 100
 
 
-tab1, tab2, tab3, tab4 = st.tabs(["BTFD", "Multiplikátor", "Nákupní částka", "Investovaná částka"])
-
-plot_key1 = (
-    f"{st.session_state.start_date}_{st.session_state.end_date}_"
-    f"{st.session_state.btfdmin_slider}_{st.session_state.btfdMULTI_slider}"
-    f"{st.session_state.investment_number}"
-)
-# tooltip
-if 'btfd_plot_key' not in st.session_state or st.session_state.btfd_plot_key != plot_key1:
-    # --- Připrav graf jen pokud se změnil časový rozsah ---
-    btfd_thinned['date_cz'] = (
-            btfd_thinned['Datetime'].dt.day.astype(str) + ". " +
-            btfd_thinned['Datetime'].dt.month.map(cz_months) + " " +
-            btfd_thinned['Datetime'].dt.year.astype(str)
-    )
-
-    btfd_fig = px.line(
-        btfd_thinned,
-        x="Datetime",
-        y="BTFD",
-    )
-
-    btfd_fig.add_hline(y=BTFD_MIN, line_dash="dash", line_color="red", annotation_text=f"{BTFD_MIN} %",
-                       annotation_position="bottom right")
-    btfd_fig.add_hline(y=0.0, line_dash="dash", line_color="red", annotation_text=f"0 %",
-                       annotation_position="top right")
-
-    # formát osy X
-    btfd_fig.update_xaxes(
-        tickformat="%d.%m.%Y",  # formát osy
-        showgrid=True,  # zapnutí vertikálních grid line
-        gridwidth=1,  # tloušťka gridu
-        tickangle=-45,  # naklonění tick labelů
-        range=[
-            btfd_thinned["Datetime"].min(),
-            btfd_thinned["Datetime"].max() + dt.timedelta(days=2)
-        ]
-    )
-
-    btfd_fig.update_layout(
-        xaxis_title="Čas",
-        yaxis_title="Hodnota indexu BTFD [%]",
-        hovermode="x unified"
-    )
-
-    # tooltip
-    btfd_fig.update_traces(
-        line=dict(color="blue", width=1.5),
-        customdata=btc_thinned['date_cz'],
-        hovertemplate=(
-                "<b>Hodnota BTFD:</b> %{y:.2f}%<br>" +
-                "<b>Datum:</b> %{customdata}" +
-                "<extra></extra>"
-        )
-    )
-
-    multiplier_fig = px.line(
-        btfd_thinned,
-        x="Datetime",
-        y="Multiplier",
-    )
-    multiplier_fig.add_hline(y=MAX_MULTIPLIER, line_dash="dash", line_color="green",
-                             annotation_text=f"Max: {MAX_MULTIPLIER}x", annotation_position="top right")
-    multiplier_fig.add_hline(y=1.0, line_dash="dash", line_color="green", annotation_text=f"Min: 1.0x",
-                             annotation_position="bottom right")
-
-    # formát osy X
-    multiplier_fig.update_xaxes(
-        tickformat="%d.%m.%Y",  # formát osy
-        showgrid=True,  # zapnutí vertikálních grid line
-        gridwidth=1,  # tloušťka gridu
-        tickangle=-45,  # naklonění tick labelů
-        range=[
-            btfd_thinned["Datetime"].min(),
-            btfd_thinned["Datetime"].max() + dt.timedelta(days=2)
-        ]
-    )
-
-    multiplier_fig.update_layout(
-        xaxis_title="Čas",
-        yaxis_title="Hodnota multiplikátoru",
-        hovermode="x unified"
-    )
-
-    # tooltip
-    multiplier_fig.update_traces(
-        line=dict(color="red", width=1.5),
-        customdata=btc_thinned['date_cz'],
-        hovertemplate=(
-                "<b>Hodnota multiplikátoru:</b> %{y:.2f}x<br>" +
-                "<b>Datum:</b> %{customdata}" +
-                "<extra></extra>"
-        )
-    )
-
-    buy_fig = px.line(
-        btfd_thinned,
-        x="Datetime",
-        y=btfd_thinned["Multiplier"] * INVEST_PER_DAY
-    )
-    buy_fig.add_hline(y=INVEST_PER_DAY, line_dash="dash", line_color="#F7931A",
-                      annotation_text=f"Fixní investice: {INVEST_PER_DAY} USD", annotation_position="bottom right")
-
-    buy_fig.update_xaxes(
-        tickformat="%d.%m.%Y",  # formát osy
-        showgrid=True,  # zapnutí vertikálních grid line
-        gridwidth=1,  # tloušťka gridu
-        tickangle=-45,  # naklonění tick labelů
-        range=[
-            btc_thinned["Datetime"].min(),
-            btc_thinned["Datetime"].max() + dt.timedelta(days=2)
-        ]
-    )
-
-    buy_fig.update_layout(
-        xaxis_title="Čas",
-        yaxis_title="Nákupní částka [USD]",
-        hovermode="x unified"
-    )
-
-    buy_fig.update_traces(
-        line=dict(color="green", width=1.5),
-        customdata=btc_thinned['date_cz'],
-        hovertemplate=(
-                "<b>Investovaná částka:</b> %{y:.2f} USD<br>" +
-                "<b>Datum:</b> %{customdata}" +
-                "<extra></extra>"
-        )
-    )
-
-    invest_fig = go.Figure()
-
-    # --- spodní: dynamická (plná) ---
-    invest_fig.add_trace(
-        go.Scatter(
-            x=btfd_thinned["Datetime"],
-            y=btfd_thinned["Cumulative"],
-            mode="lines",
-            line=dict(color="green", width=1.5),
-            name="Dynamická investice",
-            customdata=btc_thinned['date_cz'],
-            hovertemplate="<b>Celkově investováno (dynamická částka):</b> %{y:.2f} USD<br><b>Datum:</b> %{customdata}<extra></extra>"
-        )
-    )
-
-    # --- vrchní: fixní (dash) ---
-    invest_fig.add_trace(
-        go.Scatter(
-            x=btfd_thinned["Datetime"],
-            y=INVEST_PER_DAY * np.arange(len(btfd_thinned)),
-            mode="lines",
-            line=dict(color="#F7931A", dash="dash", width=1.5),
-            name=f"Fixní investice: {INVEST_PER_DAY} USD",
-            customdata=btc_thinned['date_cz'],
-            hovertemplate="<b>Celkově investováno (fixní částka):</b> %{y:.2f} USD<br><b>Datum:</b> %{customdata}<extra></extra>"
-        )
-    )
-
-    invest_fig.update_xaxes(
-        tickformat="%d.%m.%Y",  # formát osy
-        showgrid=True,  # zapnutí vertikálních grid line
-        gridwidth=1,  # tloušťka gridu
-        tickangle=-45,  # naklonění tick labelů
-        range=[
-            btfd_thinned["Datetime"].min(),
-            btfd_thinned["Datetime"].max() + dt.timedelta(days=2)
-        ]
-    )
-
-    invest_fig.update_layout(
-        xaxis_title="Čas",
-        yaxis_title="Investovaná částka [USD]",
-        hovermode="x unified",
-        legend=dict(
-            x=0.01,
-            y=0.99,
-            xanchor="left",
-            yanchor="top",
-        )
-    )
-
-    invest_fig.data[0].update(
-        customdata=btc_thinned['date_cz'],
-        name="Dynamická investice",
-        showlegend=True,
-        hovertemplate=(
-                "<b>Celkově investováno (dynamická částka):</b> %{y:.2f} USD<br>" +
-                "<b>Datum:</b> %{customdata}" +
-                "<extra></extra>"
-        )
-    )
-    invest_fig.data[1].update(
-        customdata=btc_thinned['date_cz'],
-        hovertemplate=(
-                "<b>Celkově investováno (fixní částka):</b> %{y:.2f} USD<br>" +
-                "<b>Datum:</b> %{customdata}" +
-                "<extra></extra>"
-        )
-    )
-
-    st.session_state.btfd_fig = btfd_fig
-    st.session_state.multiplier_fig = multiplier_fig
-    st.session_state.buy_fig = buy_fig
-    st.session_state.invest_fig = invest_fig
-    st.session_state.btfd_plot_key = plot_key1
-
-with tab1:
-    st.plotly_chart(st.session_state.btfd_fig, key="btfd_plot")
-
-with tab2:
-    st.plotly_chart(st.session_state.multiplier_fig, key="multiplier_plot")
-
-with tab3:
-    st.plotly_chart(st.session_state.buy_fig, key="buy_plot")
-
-with tab4:
-    st.plotly_chart(st.session_state.invest_fig, key="invest_plot")
-
-
 limit_levels = (0, 1, 2, 3, 4, 5)
 weight_sets = ((1.00, 0.00, 0.00, 0.00, 0.00, 0.00), (0.00, 1.00, 0.00, 0.00, 0.00, 0.00),)
 limit_multipliers = np.array([1 - lvl / 100 for lvl in limit_levels])
@@ -740,31 +521,251 @@ def run_backtest():
 
 results = run_backtest()
 
-## --- 1. TOP podle průměrné ceny ---
-# top_price = sorted(results, key=lambda x: x['avg_price_series'][-1])[:5]
+
+#tab1, tab2, tab3, tab4 = st.tabs(["BTFD", "Multiplikátor", "Nákupní částka", "Investovaná částka"])
 #
-# st.write("## 📊 TOP 5 strategií podle průměrné nákupní ceny")
-# for i, r in enumerate(top_price, 1):
-#    fills = {k: round(v * 100, 1) for k, v in r['avg_fill_rate'].items()}
-#    st.write(f"**{i}. Váhy:** {list(r['weights'])}, **Tržní nákup:** {list(r['market_buy_for'])}")
-#    st.write(f"- Průměrná cena: {r['avg_price_series'][-1]:.2f} USD")
-#    st.write(f"- Celkové BTC: {r['total_btc']:.6f}")
-#    st.write(f"- Celkově vložený kapitál: {r['total_cost']:.2f} USD")
-#    st.write(f"- Počet dnů: {r['days']}")
-#    st.write(f"- Celkový zisk: {r['total_profit']:.2f} USD")
-#    st.write(f"- ROI: {r['ROI']:.2f} %")
-#    st.write(f"- ROI p.a.: {r['ROI_pa']:.2f} %")
-#    st.write(f"- Využití kapitálu: {r['efficiency']:.2f} %")
-#    if r['uninvested_amount'] > 0:
-#        st.write(f"- Neinvestováno: {r['uninvested_amount']:.2f} USD")
-#    else:
-#        st.write(f"- Přebytečně investováno: {-r['uninvested_amount']:.2f} USD")
-#    st.write(f"- Celkem: {r['total_amount']:.2f} USD")
-#    st.write(f"- Naplňění limitných příkazů: {fills}")
-#    st.write(f"- Limit %: {r['percent_limit_invest']:.1f} %")
-#    st.write(f"- Market %: {r['percent_market_invest']:.1f} %")
-#    st.write("---")
+#plot_key1 = (
+#    f"{st.session_state.start_date}_{st.session_state.end_date}_"
+#    f"{st.session_state.btfdmin_slider}_{st.session_state.btfdMULTI_slider}"
+#    f"{st.session_state.investment_number}"
+#)
+## tooltip
+#if 'btfd_plot_key' not in st.session_state or st.session_state.btfd_plot_key != plot_key1:
+#    # --- Připrav graf jen pokud se změnil časový rozsah ---
+#    btfd_thinned['date_cz'] = (
+#            btfd_thinned['Datetime'].dt.day.astype(str) + ". " +
+#            btfd_thinned['Datetime'].dt.month.map(cz_months) + " " +
+#            btfd_thinned['Datetime'].dt.year.astype(str)
+#    )
 #
+#    btfd_fig = px.line(
+#        btfd_thinned,
+#        x="Datetime",
+#        y="BTFD",
+#    )
+#
+#    btfd_fig.add_hline(y=BTFD_MIN, line_dash="dash", line_color="red", annotation_text=f"{BTFD_MIN} %",
+#                       annotation_position="bottom right")
+#    btfd_fig.add_hline(y=0.0, line_dash="dash", line_color="red", annotation_text=f"0 %",
+#                       annotation_position="top right")
+#
+#    # formát osy X
+#    btfd_fig.update_xaxes(
+#        tickformat="%d.%m.%Y",  # formát osy
+#        showgrid=True,  # zapnutí vertikálních grid line
+#        gridwidth=1,  # tloušťka gridu
+#        tickangle=-45,  # naklonění tick labelů
+#        range=[
+#            btfd_thinned["Datetime"].min(),
+#            btfd_thinned["Datetime"].max() + dt.timedelta(days=2)
+#        ]
+#    )
+#
+#    btfd_fig.update_layout(
+#        xaxis_title="Čas",
+#        yaxis_title="Hodnota indexu BTFD [%]",
+#        hovermode="x unified"
+#    )
+#
+#    # tooltip
+#    btfd_fig.update_traces(
+#        line=dict(color="blue", width=1.5),
+#        customdata=btc_thinned['date_cz'],
+#        hovertemplate=(
+#                "<b>Hodnota BTFD:</b> %{y:.2f}%<br>" +
+#                "<b>Datum:</b> %{customdata}" +
+#                "<extra></extra>"
+#        )
+#    )
+#
+#    multiplier_fig = px.line(
+#        btfd_thinned,
+#        x="Datetime",
+#        y="Multiplier",
+#    )
+#    multiplier_fig.add_hline(y=MAX_MULTIPLIER, line_dash="dash", line_color="green",
+#                             annotation_text=f"Max: {MAX_MULTIPLIER}x", annotation_position="top right")
+#    multiplier_fig.add_hline(y=1.0, line_dash="dash", line_color="green", annotation_text=f"Min: 1.0x",
+#                             annotation_position="bottom right")
+#
+#    # formát osy X
+#    multiplier_fig.update_xaxes(
+#        tickformat="%d.%m.%Y",  # formát osy
+#        showgrid=True,  # zapnutí vertikálních grid line
+#        gridwidth=1,  # tloušťka gridu
+#        tickangle=-45,  # naklonění tick labelů
+#        range=[
+#            btfd_thinned["Datetime"].min(),
+#            btfd_thinned["Datetime"].max() + dt.timedelta(days=2)
+#        ]
+#    )
+#
+#    multiplier_fig.update_layout(
+#        xaxis_title="Čas",
+#        yaxis_title="Hodnota multiplikátoru",
+#        hovermode="x unified"
+#    )
+#
+#    # tooltip
+#    multiplier_fig.update_traces(
+#        line=dict(color="red", width=1.5),
+#        customdata=btc_thinned['date_cz'],
+#        hovertemplate=(
+#                "<b>Hodnota multiplikátoru:</b> %{y:.2f}x<br>" +
+#                "<b>Datum:</b> %{customdata}" +
+#                "<extra></extra>"
+#        )
+#    )
+#
+#    buy_fig = px.line(
+#        btfd_thinned,
+#        x="Datetime",
+#        y=btfd_thinned["Multiplier"] * INVEST_PER_DAY
+#    )
+#    buy_fig.add_hline(y=INVEST_PER_DAY, line_dash="dash", line_color="#F7931A",
+#                      annotation_text=f"Fixní investice: {INVEST_PER_DAY} USD", annotation_position="bottom right")
+#
+#    buy_fig.update_xaxes(
+#        tickformat="%d.%m.%Y",  # formát osy
+#        showgrid=True,  # zapnutí vertikálních grid line
+#        gridwidth=1,  # tloušťka gridu
+#        tickangle=-45,  # naklonění tick labelů
+#        range=[
+#            btc_thinned["Datetime"].min(),
+#            btc_thinned["Datetime"].max() + dt.timedelta(days=2)
+#        ]
+#    )
+#
+#    buy_fig.update_layout(
+#        xaxis_title="Čas",
+#        yaxis_title="Nákupní částka [USD]",
+#        hovermode="x unified"
+#    )
+#
+#    buy_fig.update_traces(
+#        line=dict(color="green", width=1.5),
+#        customdata=btc_thinned['date_cz'],
+#        hovertemplate=(
+#                "<b>Investovaná částka:</b> %{y:.2f} USD<br>" +
+#                "<b>Datum:</b> %{customdata}" +
+#                "<extra></extra>"
+#        )
+#    )
+#
+#    invest_fig = go.Figure()
+#
+#    # --- spodní: dynamická (plná) ---
+#    invest_fig.add_trace(
+#        go.Scatter(
+#            x=btfd_thinned["Datetime"],
+#            y=btfd_thinned["Cumulative"],
+#            mode="lines",
+#            line=dict(color="green", width=1.5),
+#            name="Dynamická investice",
+#            customdata=btc_thinned['date_cz'],
+#            hovertemplate="<b>Celkově investováno (dynamická částka):</b> %{y:.2f} USD<br><b>Datum:</b> %{customdata}<extra></extra>"
+#        )
+#    )
+#
+#    # --- vrchní: fixní (dash) ---
+#    invest_fig.add_trace(
+#        go.Scatter(
+#            x=btfd_thinned["Datetime"],
+#            y=INVEST_PER_DAY * np.arange(len(btfd_thinned)),
+#            mode="lines",
+#            line=dict(color="#F7931A", dash="dash", width=1.5),
+#            name=f"Fixní investice: {INVEST_PER_DAY} USD",
+#            customdata=btc_thinned['date_cz'],
+#            hovertemplate="<b>Celkově investováno (fixní částka):</b> %{y:.2f} USD<br><b>Datum:</b> %{customdata}<extra></extra>"
+#        )
+#    )
+#
+#    invest_fig.update_xaxes(
+#        tickformat="%d.%m.%Y",  # formát osy
+#        showgrid=True,  # zapnutí vertikálních grid line
+#        gridwidth=1,  # tloušťka gridu
+#        tickangle=-45,  # naklonění tick labelů
+#        range=[
+#            btfd_thinned["Datetime"].min(),
+#            btfd_thinned["Datetime"].max() + dt.timedelta(days=2)
+#        ]
+#    )
+#
+#    invest_fig.update_layout(
+#        xaxis_title="Čas",
+#        yaxis_title="Investovaná částka [USD]",
+#        hovermode="x unified",
+#        legend=dict(
+#            x=0.01,
+#            y=0.99,
+#            xanchor="left",
+#            yanchor="top",
+#        )
+#    )
+#
+#    invest_fig.data[0].update(
+#        customdata=btc_thinned['date_cz'],
+#        name="Dynamická investice",
+#        showlegend=True,
+#        hovertemplate=(
+#                "<b>Celkově investováno (dynamická částka):</b> %{y:.2f} USD<br>" +
+#                "<b>Datum:</b> %{customdata}" +
+#                "<extra></extra>"
+#        )
+#    )
+#    invest_fig.data[1].update(
+#        customdata=btc_thinned['date_cz'],
+#        hovertemplate=(
+#                "<b>Celkově investováno (fixní částka):</b> %{y:.2f} USD<br>" +
+#                "<b>Datum:</b> %{customdata}" +
+#                "<extra></extra>"
+#        )
+#    )
+#
+#    st.session_state.btfd_fig = btfd_fig
+#    st.session_state.multiplier_fig = multiplier_fig
+#    st.session_state.buy_fig = buy_fig
+#    st.session_state.invest_fig = invest_fig
+#    st.session_state.btfd_plot_key = plot_key1
+#
+#with tab1:
+#    st.plotly_chart(st.session_state.btfd_fig, key="btfd_plot")
+#
+#with tab2:
+#    st.plotly_chart(st.session_state.multiplier_fig, key="multiplier_plot")
+#
+#with tab3:
+#    st.plotly_chart(st.session_state.buy_fig, key="buy_plot")
+#
+#with tab4:
+#    st.plotly_chart(st.session_state.invest_fig, key="invest_plot")
+
+
+
+# --- 1. TOP podle průměrné ceny ---
+top_price = sorted(results, key=lambda x: x['avg_price_series'][-1])[:5]
+st.write("## 📊 TOP 5 strategií podle průměrné nákupní ceny")
+for i, r in enumerate(top_price, 1):
+    fills = {k: round(v * 100, 1) for k, v in r['avg_fill_rate'].items()}
+    st.write(f"**{i}. Váhy:** {list(r['weights'])}, **Tržní nákup:** {list(r['market_buy_for'])}")
+    st.write(f"- Průměrná cena: {r['avg_price_series'][-1]:.2f} USD")
+    st.write(f"- Celkové BTC: {r['total_btc']:.8f}")
+    st.write(f"- Celkově vložený kapitál: {r['total_cost']:.2f} USD")
+    st.write(f"- Počet dnů: {r['days']}")
+    st.write(f"- Celkový zisk: {r['total_profit']:.2f} USD")
+    st.write(f"- ROI: {r['ROI']:.2f} %")
+    st.write(f"- ROI p.a.: {r['ROI_pa']:.2f} %")
+    st.write(f"- Využití kapitálu: {r['efficiency']:.2f} %")
+    if r['uninvested_amount'] > 0:
+        st.write(f"- Neinvestováno: {r['uninvested_amount']:.2f} USD")
+    else:
+        st.write(f"- Přebytečně investováno: {-r['uninvested_amount']:.2f} USD")
+    st.write(f"- Celkem: {r['total_amount']:.2f} USD")
+    st.write(f"- Naplňění limitných příkazů: {fills}")
+    st.write(f"- Limit %: {r['percent_limit_invest']:.1f} %")
+    st.write(f"- Market %: {r['percent_market_invest']:.1f} %")
+    st.write("---")
+
 ## --- 2. TOP podle BTC ---
 # top_btc = sorted(results, key=lambda x: x['total_btc'], reverse=True)[:5]
 #
