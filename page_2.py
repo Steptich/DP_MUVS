@@ -426,11 +426,15 @@ def simulate_configuration(
     avg_prices_series = np.zeros((n_days), dtype=np.float64)
     total_cost_series = np.zeros((n_days), dtype=np.float64)
     total_btc_series = np.zeros((n_days), dtype=np.float64)
+    total_profit_series = np.zeros((n_days), dtype=np.float64)
+    total_value_series = np.zeros((n_days), dtype=np.float64)
+    total_roi_series = np.zeros((n_days), dtype=np.float64)
     btfd_value_series = np.full((n_days,), -1, dtype=np.float64)
     btfd_multiplier_series = np.zeros((n_days), dtype=np.float64)
 
     total_btc = total_cost = count_days = 0
     total_limit = total_market = 0
+    closes_all = btc['Close'].values
 
     fills_sum = np.zeros(len(limit_levels), dtype=np.float32)
 
@@ -461,6 +465,7 @@ def simulate_configuration(
         total_cost += cost
         total_btc_series[day_i] = total_btc
         total_cost_series[day_i] = total_cost
+        total_value_series[day_i] = total_btc * closes_all[start_idx + 24]
         btfd_value_series[day_i] = btfd_value
         btfd_multiplier_series[day_i] = btfd_multiplier
         count_days = day_i
@@ -471,15 +476,50 @@ def simulate_configuration(
 
     if count_days == 0:
         return None
+    
+    total_profit_series = total_value_series - total_cost_series
+    avg_prices_series = np.divide(
+        total_cost_series,
+        total_btc_series,
+        out=np.zeros_like(total_cost_series),
+        where=total_cost_series != 0
+    )
+    total_roi_series = np.divide(
+        total_profit_series,
+        total_cost_series,
+        out=np.zeros_like(total_profit_series),
+        where=total_cost_series != 0
+    ) * 100
+    
+    #removing zeros from series for better plotting (zeros are from days without purchase)
+    valid_mask = total_cost_series != 0
+    total_btc_series = total_btc_series[valid_mask]
+    total_cost_series = total_cost_series[valid_mask]
+    total_profit_series = total_profit_series[valid_mask]
+    total_value_series = total_value_series[valid_mask]
+    avg_prices_series = avg_prices_series[valid_mask]
+    total_roi_series = total_roi_series[valid_mask]
     btfd_value_series = btfd_value_series[valid_mask]
     btfd_multiplier_series = btfd_multiplier_series[valid_mask]
 
+    #setting correct values for the last day (in case last day(s) had no purchase)
+    last_valid_idx = np.max(np.where(total_cost_series != 0))
+    final_value = total_btc * last_price
+    final_profit = final_value - total_cost
+    final_roi = (final_profit / total_cost) * 100
+
+    total_value_series[last_valid_idx] = final_value
+    total_profit_series[last_valid_idx] = final_profit
+    total_roi_series[last_valid_idx] = final_roi
 
     return {
         "weights": weights,
         "market_buy_for": tuple(sorted(market_set)),
         "total_cost_series": total_cost_series,
         "total_btc_series": total_btc_series,
+        "total_profit_series": total_profit_series,
+        "total_value_series": total_value_series,
+        "total_roi_series": total_roi_series,
         "avg_price_series": avg_prices_series,
         "btfd_value_series": btfd_value_series,
         "btfd_multiplier_series": btfd_multiplier_series,
