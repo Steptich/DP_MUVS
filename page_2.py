@@ -539,47 +539,94 @@ def run_backtest(weights, market_set):
 
     return results
 
+col1a, col2a = st.columns(2)
+
+with col1a:
+
+    weights1 = []
+
+    st.subheader("Váhy pro jednotlivé levely")
+
+    for lvl in limit_levels:
+        w = st.slider(
+            f"Level {lvl} %",
+            min_value=0.0,
+            max_value=1.0,
+            value=0.0,
+            step=0.05,
+            key=f"slider_weight1_lvl{lvl}"
+        )
+        weights1.append(w)
+
+    weights1 = tuple(weights1)
+
+    total_weight1 = sum(weights1)
+
+    if total_weight1 > 1:
+        st.error(f"Součet vah je {total_weight1:.2f} (> 1)")
+        st.stop()  # zastaví další vykreslování a výpočty, dokud uživatel neopravi váhy
+    elif total_weight1 < 1:
+        st.error(f"Součet vah je {total_weight1:.2f} (< 1)")
+        st.stop()
+    else:
+        st.success(f"Součet vah: {total_weight1:.2f}")
+
+    st.subheader("Market fallback (pokud limit není vyplněn)")
+
+    market_levels1 = []
+
+    for i, lvl in enumerate(limit_levels):
+        if weights1[i] > 0:
+            if st.checkbox(f"Market buy pro level {lvl}", value=False,key=f"checkbox_market1_lvl{lvl}"):
+                market_levels1.append(lvl)
+
+    market_set1 = frozenset(market_levels1)
+
+    results_1 = run_backtest(weights1, market_set1)
 
 
-weights1 = []
+with col2a:
 
-st.subheader("Váhy pro jednotlivé levely")
+    weights2 = []
 
-for lvl in limit_levels:
-    w = st.slider(
-        f"Level {lvl} %",
-        min_value=0.0,
-        max_value=1.0,
-        value=0.0,
-        step=0.05
-    )
-    weights1.append(w)
+    st.subheader("Váhy pro jednotlivé levely")
 
-weights1 = tuple(weights1)
+    for lvl in limit_levels:
+        w = st.slider(
+            f"Level {lvl} %",
+            min_value=0.0,
+            max_value=1.0,
+            value=0.0,
+            step=0.05,
+            key=f"slider_weight2_lvl{lvl}"
+        )
+        weights2.append(w)
 
-total_weight = sum(weights1)
+    weights2 = tuple(weights2)
 
-if total_weight > 1:
-    st.error(f"Součet vah je {total_weight:.2f} (> 1)")
-    st.stop()  # zastaví další vykreslování a výpočty, dokud uživatel neopravi váhy
-elif total_weight < 1:
-    st.error(f"Součet vah je {total_weight:.2f} (< 1)")
-    st.stop()
-else:
-    st.success(f"Součet vah: {total_weight:.2f}")
+    total_weight2 = sum(weights2)
 
-st.subheader("Market fallback (pokud limit není vyplněn)")
+    if total_weight2 > 1:
+        st.error(f"Součet vah je {total_weight2:.2f} (> 1)")
+        st.stop()  # zastaví další vykreslování a výpočty, dokud uživatel neopravi váhy
+    elif total_weight2 < 1:
+        st.error(f"Součet vah je {total_weight2:.2f} (< 1)")
+        st.stop()
+    else:
+        st.success(f"Součet vah: {total_weight2:.2f}")
 
-market_levels1 = []
+    st.subheader("Market fallback (pokud limit není vyplněn)")
 
-for i, lvl in enumerate(limit_levels):
-    if weights1[i] > 0:
-        if st.checkbox(f"Market buy pro level {lvl}", value=False):
-            market_levels1.append(lvl)
+    market_levels2 = []
 
-market_set1 = frozenset(market_levels1)
+    for i, lvl in enumerate(limit_levels):
+        if weights2[i] > 0:
+            if st.checkbox(f"Market buy pro level {lvl}", value=False,key=f"checkbox_market2_lvl{lvl}"):
+                market_levels2.append(lvl)
 
-results_1 = run_backtest(weights1, market_set1)
+    market_set2 = frozenset(market_levels2)
+
+    results_2 = run_backtest(weights2, market_set2)
 
 
 tab1a, tab2a, tab3a, tab4a = st.tabs(["BTFD", "Multiplikátor", "Nákupní částka", "Investovaná částka"])
