@@ -896,18 +896,46 @@ if results_1 and results_2:
 
     # tooltip
     if 'trade_plot_key' not in st.session_state or st.session_state.trade_plot_key != plot_key2:
-        df_trade_plot = pd.DataFrame({
-            "Datetime": pd.to_datetime(btc.loc[ref_positions, "Datetime"][:len(results_1[0]["btfd_value_series"])]),
+        df_trade_plot1 = pd.DataFrame({
+            "Datetime": results_1[0]["buy_date_series"],
             "ROI": results_1[0]["total_roi_series"],
             "Avg_price": results_1[0]["avg_price_series"],
             "Total_value": results_1[0]["total_value_series"],
             "Total_btc": results_1[0]["total_btc_series"],
         })
 
-        roi_fig = px.line(
-            df_trade_plot,
-            x="Datetime",
-            y="ROI",
+        df_trade_plot2 = pd.DataFrame({
+            "Datetime": results_2[0]["buy_date_series"],
+            "ROI": results_2[0]["total_roi_series"],
+            "Avg_price": results_2[0]["avg_price_series"],
+            "Total_value": results_2[0]["total_value_series"],
+            "Total_btc": results_2[0]["total_btc_series"],
+        })
+
+        roi_fig = go.Figure()
+
+        roi_fig.add_trace(
+            go.Scatter(
+                x=df_trade_plot1["Datetime"],
+                y=df_trade_plot1["ROI"],
+                mode='lines',
+                name='Strategie 1',
+                line=dict(color='blue', width=1.5),
+                customdata=df_trade_plot1["Datetime"].dt.strftime('%d.%m.%Y'),
+                hovertemplate="<b>Strategie 1: Výnosnost investice:</b> %{y:.2f}%<br><b>Datum:</b> %{customdata}<extra></extra>"
+            )
+        )
+
+        roi_fig.add_trace(
+            go.Scatter(
+                x=df_trade_plot2["Datetime"],
+                y=df_trade_plot2["ROI"],
+                mode='lines',
+                name='Strategie 2',
+                line=dict(color='red', width=1.5),  # zde nastavíš barvu
+                customdata=df_trade_plot2["Datetime"].dt.strftime('%d.%m.%Y'),
+                hovertemplate="<b>Strategie 2: Výnosnost investice:</b> %{y:.2f}%<br><b>Datum:</b> %{customdata}<extra></extra>"
+            )
         )
 
         # formát osy X
@@ -917,32 +945,48 @@ if results_1 and results_2:
             gridwidth=1,  # tloušťka gridu
             tickangle=-45,  # naklonění tick labelů
             range=[
-                df_trade_plot["Datetime"].min(),
-                df_trade_plot["Datetime"].max() + dt.timedelta(days=2)
+                df_trade_plot1["Datetime"].min(),
+                df_trade_plot1["Datetime"].max() + dt.timedelta(days=2)
             ]
         )
 
         roi_fig.update_layout(
             xaxis_title="Čas",
             yaxis_title="Výnosnost investice [%]",
-            hovermode="x unified"
-        )
-
-        # tooltip
-        roi_fig.update_traces(
-            line=dict(color="blue", width=1.5),
-            customdata=btc_thinned['date_cz'],
-            hovertemplate=(
-                    "<b>Výnosnost investice:</b> %{y:.2f}%<br>" +
-                    "<b>Datum:</b> %{customdata}" +
-                    "<extra></extra>"
+            hovermode="x unified",
+            legend=dict(
+                x=0.01,
+                y=0.99,
+                xanchor="left",
+                yanchor="top",
             )
         )
 
-        avg_price_fig = px.line(
-            df_trade_plot,
-            x="Datetime",
-            y="Avg_price",
+
+        avg_price_fig = go.Figure()
+
+        avg_price_fig.add_trace(
+            go.Scatter(
+                x=df_trade_plot1["Datetime"],
+                y=df_trade_plot1["Avg_price"],
+                mode='lines',
+                name='Strategie 1',
+                line=dict(color='blue', width=1.5),
+                customdata=df_trade_plot1["Datetime"].dt.strftime('%d.%m.%Y'),
+                hovertemplate="<b>Strategie 1: Průměrná nákupní cena:</b> %{y:.2f} USD<br><b>Datum:</b> %{customdata}<extra></extra>"
+            )
+        )
+
+        avg_price_fig.add_trace(
+            go.Scatter(
+                x=df_trade_plot2["Datetime"],
+                y=df_trade_plot2["Avg_price"],
+                mode='lines',
+                name='Strategie 2',
+                line=dict(color='red', width=1.5),  # zde nastavíš barvu
+                customdata=df_trade_plot2["Datetime"].dt.strftime('%d.%m.%Y'),
+                hovertemplate="<b>Strategie 2: Průměrná nákupní cena:</b> %{y:.2f} USD<br><b>Datum:</b> %{customdata}<extra></extra>"
+            )
         )
 
         # formát osy X
@@ -952,32 +996,47 @@ if results_1 and results_2:
             gridwidth=1,  # tloušťka gridu
             tickangle=-45,  # naklonění tick labelů
             range=[
-                df_trade_plot["Datetime"].min(),
-                df_trade_plot["Datetime"].max() + dt.timedelta(days=2)
+                df_trade_plot1["Datetime"].min(),
+                df_trade_plot1["Datetime"].max() + dt.timedelta(days=2)
             ]
         )
 
         avg_price_fig.update_layout(
             xaxis_title="Čas",
             yaxis_title="Průměrná nákupní cena [USD]",
-            hovermode="x unified"
-        )
-
-        # tooltip
-        avg_price_fig.update_traces(
-            line=dict(color="blue", width=1.5),
-            customdata=btc_thinned['date_cz'],
-            hovertemplate=(
-                    "<b>Průměrná nákupní cena:</b> %{y:.2f} USD<br>" +
-                    "<b>Datum:</b> %{customdata}" +
-                    "<extra></extra>"
+            hovermode="x unified",
+            legend=dict(
+                x=0.01,
+                y=0.99,
+                xanchor="left",
+                yanchor="top",
             )
         )
 
-        total_value_fig = px.line(
-            df_trade_plot,
-            x="Datetime",
-            y="Total_value",
+        total_value_fig = go.Figure()
+
+        total_value_fig.add_trace(
+            go.Scatter(
+                x=df_trade_plot1["Datetime"],
+                y=df_trade_plot1["Total_value"],
+                mode='lines',
+                name='Strategie 1',
+                line=dict(color='blue', width=1.5),
+                customdata=df_trade_plot1["Datetime"].dt.strftime('%d.%m.%Y'),
+                hovertemplate="<b>Strategie 1: Celková hodnota:</b> %{y:.2f} USD<br><b>Datum:</b> %{customdata}<extra></extra>"
+            )
+        )
+
+        total_value_fig.add_trace(
+            go.Scatter(
+                x=df_trade_plot2["Datetime"],
+                y=df_trade_plot2["Total_value"],
+                mode='lines',
+                name='Strategie 2',
+                line=dict(color='red', width=1.5),  # zde nastavíš barvu
+                customdata=df_trade_plot2["Datetime"].dt.strftime('%d.%m.%Y'),
+                hovertemplate="<b>Strategie 2: Celková hodnota:</b> %{y:.2f} USD<br><b>Datum:</b> %{customdata}<extra></extra>"
+            )
         )
 
         # formát osy X
@@ -987,32 +1046,48 @@ if results_1 and results_2:
             gridwidth=1,  # tloušťka gridu
             tickangle=-45,  # naklonění tick labelů
             range=[
-                df_trade_plot["Datetime"].min(),
-                df_trade_plot["Datetime"].max() + dt.timedelta(days=2)
+                df_trade_plot1["Datetime"].min(),
+                df_trade_plot1["Datetime"].max() + dt.timedelta(days=2)
             ]
         )
 
         total_value_fig.update_layout(
             xaxis_title="Čas",
             yaxis_title="Celková hodnota [USD]",
-            hovermode="x unified"
-        )
-
-        # tooltip
-        total_value_fig.update_traces(
-            line=dict(color="blue", width=1.5),
-            customdata=btc_thinned['date_cz'],
-            hovertemplate=(
-                    "<b>Celková hodnota:</b> %{y:.2f} USD<br>" +
-                    "<b>Datum:</b> %{customdata}" +
-                    "<extra></extra>"
+            hovermode="x unified",
+            legend=dict(
+                x=0.01,
+                y=0.99,
+                xanchor="left",
+                yanchor="top",
             )
         )
 
-        total_btc_fig = px.line(
-            df_trade_plot,
-            x="Datetime",
-            y="Total_btc",
+
+        total_btc_fig = go.Figure()
+
+        total_btc_fig.add_trace(
+            go.Scatter(
+                x=df_trade_plot1["Datetime"],
+                y=df_trade_plot1["Total_btc"],
+                mode='lines',
+                name='Strategie 1',
+                line=dict(color='blue', width=1.5),
+                customdata=df_trade_plot1["Datetime"].dt.strftime('%d.%m.%Y'),
+                hovertemplate="<b>Strategie 1: Celkové množství BTC:</b> %{y:.8f}<br><b>Datum:</b> %{customdata}<extra></extra>"
+            )
+        )
+
+        total_btc_fig.add_trace(
+            go.Scatter(
+                x=df_trade_plot2["Datetime"],
+                y=df_trade_plot2["Total_btc"],
+                mode='lines',
+                name='Strategie 2',
+                line=dict(color='red', width=1.5),  # zde nastavíš barvu
+                customdata=df_trade_plot2["Datetime"].dt.strftime('%d.%m.%Y'),
+                hovertemplate="<b>Strategie 2: Celkové množství BTC:</b> %{y:.8f}<br><b>Datum:</b> %{customdata}<extra></extra>"
+            )
         )
 
         # formát osy X
@@ -1022,25 +1097,20 @@ if results_1 and results_2:
             gridwidth=1,  # tloušťka gridu
             tickangle=-45,  # naklonění tick labelů
             range=[
-                df_trade_plot["Datetime"].min(),
-                df_trade_plot["Datetime"].max() + dt.timedelta(days=2)
+                df_trade_plot1["Datetime"].min(),
+                df_trade_plot1["Datetime"].max() + dt.timedelta(days=2)
             ]
         )
 
         total_btc_fig.update_layout(
             xaxis_title="Čas",
             yaxis_title="Celkové množství BTC",
-            hovermode="x unified"
-        )
-
-        # tooltip
-        total_btc_fig.update_traces(
-            line=dict(color="blue", width=1.5),
-            customdata=btc_thinned['date_cz'],
-            hovertemplate=(
-                    "<b>Celkové množství BTC:</b> %{y:.8f}<br>" +
-                    "<b>Datum:</b> %{customdata}" +
-                    "<extra></extra>"
+            hovermode="x unified",
+            legend=dict(
+                x=0.01,
+                y=0.99,
+                xanchor="left",
+                yanchor="top",
             )
         )
 
