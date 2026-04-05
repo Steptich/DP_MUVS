@@ -629,16 +629,24 @@ if results_1 and results_2:
     # tooltip
     if 'btfd_plot_key' not in st.session_state or st.session_state.btfd_plot_key != plot_key1:
 
-        df_btfd_plot = pd.DataFrame({
-            "Datetime": pd.to_datetime(btc.loc[ref_positions, "Datetime"][:len(results_1[0]["btfd_value_series"])]),
+        df_btfd_plot_1 = pd.DataFrame({
+            "Datetime": results_1[0]["buy_date_series"],
             "BTFD": results_1[0]["btfd_value_series"],
             "Multiplier": results_1[0]["btfd_multiplier_series"]
         })
 
-        df_btfd_plot["Cumulative"] = (results_1[0]["total_cost_series"])
+        df_btfd_plot_1["Cumulative"] = (results_1[0]["total_cost_series"])
 
+        df_btfd_plot_2 = pd.DataFrame({
+            "Datetime": results_2[0]["buy_date_series"],
+            "BTFD": results_2[0]["btfd_value_series"],
+            "Multiplier": results_2[0]["btfd_multiplier_series"]
+        })
+
+        df_btfd_plot_2["Cumulative"] = (results_2[0]["total_cost_series"])
+        
         btfd_fig = px.line(
-            df_btfd_plot,
+            df_btfd_plot_1,
             x="Datetime",
             y="BTFD",
         )
@@ -655,8 +663,8 @@ if results_1 and results_2:
             gridwidth=1,  # tloušťka gridu
             tickangle=-45,  # naklonění tick labelů
             range=[
-                df_btfd_plot["Datetime"].min(),
-                df_btfd_plot["Datetime"].max() + dt.timedelta(days=2)
+                df_btfd_plot_1["Datetime"].min(),
+                df_btfd_plot_1["Datetime"].max() + dt.timedelta(days=2)
             ]
         )
 
@@ -678,7 +686,7 @@ if results_1 and results_2:
         )
 
         multiplier_fig = px.line(
-            df_btfd_plot,
+            df_btfd_plot_1,
             x="Datetime",
             y="Multiplier",
         )
@@ -694,8 +702,8 @@ if results_1 and results_2:
             gridwidth=1,  # tloušťka gridu
             tickangle=-45,  # naklonění tick labelů
             range=[
-                df_btfd_plot["Datetime"].min(),
-                df_btfd_plot["Datetime"].max() + dt.timedelta(days=2)
+                df_btfd_plot_1["Datetime"].min(),
+                df_btfd_plot_1["Datetime"].max() + dt.timedelta(days=2)
             ]
         )
 
@@ -717,9 +725,9 @@ if results_1 and results_2:
         )
 
         buy_fig = px.line(
-            df_btfd_plot,
+            df_btfd_plot_1,
             x="Datetime",
-            y=df_btfd_plot["Multiplier"] * INVEST_PER_DAY
+            y=df_btfd_plot_1["Multiplier"] * INVEST_PER_DAY
         )
         buy_fig.add_hline(y=INVEST_PER_DAY, line_dash="dash", line_color="#F7931A",
                           annotation_text=f"Fixní investice: {INVEST_PER_DAY} USD", annotation_position="bottom right")
@@ -756,8 +764,8 @@ if results_1 and results_2:
         # --- spodní: dynamická (plná) ---
         invest_fig.add_trace(
             go.Scatter(
-                x=df_btfd_plot["Datetime"],
-                y=df_btfd_plot["Cumulative"],
+                x=df_btfd_plot_1["Datetime"],
+                y=df_btfd_plot_1["Cumulative"],
                 mode="lines",
                 line=dict(color="green", width=1.5),
                 name="Dynamická investice",
@@ -769,8 +777,8 @@ if results_1 and results_2:
         # --- vrchní: fixní (dash) ---
         invest_fig.add_trace(
             go.Scatter(
-                x=df_btfd_plot["Datetime"],
-                y=INVEST_PER_DAY * np.arange(len(df_btfd_plot)),
+                x=df_btfd_plot_1["Datetime"],
+                y=INVEST_PER_DAY * np.arange(len(df_btfd_plot_1)),
                 mode="lines",
                 line=dict(color="#F7931A", dash="dash", width=1.5),
                 name=f"Fixní investice: {INVEST_PER_DAY} USD",
@@ -785,8 +793,8 @@ if results_1 and results_2:
             gridwidth=1,  # tloušťka gridu
             tickangle=-45,  # naklonění tick labelů
             range=[
-                df_btfd_plot["Datetime"].min(),
-                df_btfd_plot["Datetime"].max() + dt.timedelta(days=2)
+                df_btfd_plot_1["Datetime"].min(),
+                df_btfd_plot_1["Datetime"].max() + dt.timedelta(days=2)
             ]
         )
 
