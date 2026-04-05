@@ -373,7 +373,6 @@ FEE_MARKET = st.session_state.fee_market_slider / 100
 
 
 limit_levels = (0, 1, 2, 3, 4, 5)
-weight_sets = ((1.00, 0.00, 0.00, 0.00, 0.00, 0.00), (0.00, 1.00, 0.00, 0.00, 0.00, 0.00),)
 limit_multipliers = np.array([1 - lvl / 100 for lvl in limit_levels])
 
 
@@ -520,33 +519,67 @@ def simulate_configuration(
     }
 
 
-def run_backtest():
+def run_backtest(weights, market_set):
     results = []
 
-    for i, weights in enumerate(weight_sets):
-        market_sets = tr.generate_market_sets(limit_levels, weights)
-        for market_set in market_sets:
-            # print(f"\nTestuji váhovou sadu {i + 1}/{len(weight_sets)}: {weights}")
-            res = simulate_configuration(
-                weights,
-                market_set,
-                btc,
-                ref_positions,
-                limit_levels,
-                limit_multipliers,
-                INVEST_PER_DAY,
-                btfd,
-                FEE_LIMIT,
-                FEE_MARKET
-            )
-
-            if res:
-                results.append(res)
+    res = simulate_configuration(
+        weights,
+        frozenset(market_set),
+        btc,
+        ref_positions,
+        limit_levels,
+        limit_multipliers,
+        INVEST_PER_DAY,
+        btfd,
+        FEE_LIMIT,
+        FEE_MARKET
+    )
+    if res:
+        results.append(res)
 
     return results
 
 
-results = run_backtest()
+
+weights1 = []
+
+st.subheader("Váhy pro jednotlivé levely")
+
+for lvl in limit_levels:
+    w = st.slider(
+        f"Level {lvl} %",
+        min_value=0.0,
+        max_value=1.0,
+        value=0.0,
+        step=0.05
+    )
+    weights1.append(w)
+
+weights1 = tuple(weights1)
+
+total_weight = sum(weights1)
+
+if total_weight > 1:
+    st.error(f"Součet vah je {total_weight:.2f} (> 1)")
+    st.stop()  # zastaví další vykreslování a výpočty, dokud uživatel neopravi váhy
+elif total_weight < 1:
+    st.error(f"Součet vah je {total_weight:.2f} (< 1)")
+    st.stop()
+else:
+    st.success(f"Součet vah: {total_weight:.2f}")
+
+st.subheader("Market fallback (pokud limit není vyplněn)")
+
+market_levels1 = []
+
+for i, lvl in enumerate(limit_levels):
+    if weights1[i] > 0:
+        if st.checkbox(f"Market buy pro level {lvl}", value=False):
+            market_levels1.append(lvl)
+
+market_set1 = frozenset(market_levels1)
+
+results_1 = run_backtest(weights1, market_set1)
 
 
 tab1a, tab2a, tab3a, tab4a = st.tabs(["BTFD", "Multiplikátor", "Nákupní částka", "Investovaná částka"])
