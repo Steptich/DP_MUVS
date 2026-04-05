@@ -565,7 +565,7 @@ if 'btfd_plot_key' not in st.session_state or st.session_state.btfd_plot_key != 
         "Multiplier": results[3]["btfd_multiplier_series"]
     })
 
-    df_btfd_plot["Cumulative"] = (df_btfd_plot["Multiplier"] * INVEST_PER_DAY).cumsum().shift(1, fill_value=0)
+    df_btfd_plot["Cumulative"] = (results[3]["total_cost_series"])
 
     btfd_fig = px.line(
         df_btfd_plot,
