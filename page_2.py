@@ -541,94 +541,75 @@ def run_backtest(weights, market_set):
 
     return results
 
+# Inicializace session state, pokud ještě neexistuje
+def init_session_state(seq_number):
+    for lvl in limit_levels:
+        slider_key = f"slider_weight{seq_number}_lvl{lvl}"
+        checkbox_key = f"checkbox_market{seq_number}_lvl{lvl}"
+        if slider_key not in st.session_state:
+            st.session_state[slider_key] = 0.0
+        if checkbox_key not in st.session_state:
+            st.session_state[checkbox_key] = False
+
+# Funkce pro vykreslení jedné sekvence
+def render_sequence(col, seq_number):
+    init_session_state(seq_number)
+    with col:
+        st.subheader(f"Váhy pro jednotlivé levely - sekvence {seq_number}")
+        weights = []
+
+        for lvl in limit_levels:
+            slider_key = f"slider_weight{seq_number}_lvl{lvl}"
+            w = st.slider(
+                f"Level {lvl} %",
+                min_value=0.0,
+                max_value=1.0,
+                value=st.session_state[slider_key],  # jen pro inicializaci
+                step=0.05,
+                key=slider_key
+            )
+            weights.append(w)
+
+        weights = tuple(weights)
+        total_weight = sum(weights)
+
+        valid = True
+        if total_weight > 1:
+            st.error(f"Součet vah je {total_weight:.2f} (> 1)")
+            valid = False
+        elif total_weight < 1:
+            st.error(f"Součet vah je {total_weight:.2f} (< 1)")
+            valid = False
+        else:
+            st.success(f"Součet vah: {total_weight:.2f}")
+
+        st.subheader("Market fallback (pokud limit není vyplněn)")
+        market_levels = []
+        for i, lvl in enumerate(limit_levels):
+            checkbox_key = f"checkbox_market{seq_number}_lvl{lvl}"
+            # checkbox se zobrazuje jen pokud váha > 0
+            if weights[i] > 0:
+                checked = st.checkbox(
+                    f"Market buy pro level {lvl}",
+                    value=st.session_state[checkbox_key],
+                    key=checkbox_key
+                )
+                if checked:
+                    market_levels.append(lvl)
+            else:
+                # váha = 0 → checkbox je automaticky False
+                st.session_state[checkbox_key] = False
+
+        market_set = frozenset(market_levels)
+
+        results = run_backtest(weights, market_set) if valid else None
+        return weights, market_set, results
+
+# Rozdělení do dvou sloupců
 col1a, col2a = st.columns(2)
 
-with col1a:
-
-    weights1 = []
-
-    st.subheader("Váhy pro jednotlivé levely")
-
-    for lvl in limit_levels:
-        w = st.slider(
-            f"Level {lvl} %",
-            min_value=0.0,
-            max_value=1.0,
-            value=0.0,
-            step=0.05,
-            key=f"slider_weight1_lvl{lvl}"
-        )
-        weights1.append(w)
-
-    weights1 = tuple(weights1)
-
-    total_weight1 = sum(weights1)
-
-    if total_weight1 > 1:
-        st.error(f"Součet vah je {total_weight1:.2f} (> 1)")
-        st.stop()  # zastaví další vykreslování a výpočty, dokud uživatel neopravi váhy
-    elif total_weight1 < 1:
-        st.error(f"Součet vah je {total_weight1:.2f} (< 1)")
-        st.stop()
-    else:
-        st.success(f"Součet vah: {total_weight1:.2f}")
-
-    st.subheader("Market fallback (pokud limit není vyplněn)")
-
-    market_levels1 = []
-
-    for i, lvl in enumerate(limit_levels):
-        if weights1[i] > 0:
-            if st.checkbox(f"Market buy pro level {lvl}", value=False,key=f"checkbox_market1_lvl{lvl}"):
-                market_levels1.append(lvl)
-
-    market_set1 = frozenset(market_levels1)
-
-    results_1 = run_backtest(weights1, market_set1)
-
-
-with col2a:
-
-    weights2 = []
-
-    st.subheader("Váhy pro jednotlivé levely")
-
-    for lvl in limit_levels:
-        w = st.slider(
-            f"Level {lvl} %",
-            min_value=0.0,
-            max_value=1.0,
-            value=0.0,
-            step=0.05,
-            key=f"slider_weight2_lvl{lvl}"
-        )
-        weights2.append(w)
-
-    weights2 = tuple(weights2)
-
-    total_weight2 = sum(weights2)
-
-    if total_weight2 > 1:
-        st.error(f"Součet vah je {total_weight2:.2f} (> 1)")
-        st.stop()  # zastaví další vykreslování a výpočty, dokud uživatel neopravi váhy
-    elif total_weight2 < 1:
-        st.error(f"Součet vah je {total_weight2:.2f} (< 1)")
-        st.stop()
-    else:
-        st.success(f"Součet vah: {total_weight2:.2f}")
-
-    st.subheader("Market fallback (pokud limit není vyplněn)")
-
-    market_levels2 = []
-
-    for i, lvl in enumerate(limit_levels):
-        if weights2[i] > 0:
-            if st.checkbox(f"Market buy pro level {lvl}", value=False,key=f"checkbox_market2_lvl{lvl}"):
-                market_levels2.append(lvl)
-
-    market_set2 = frozenset(market_levels2)
-
-    results_2 = run_backtest(weights2, market_set2)
+weights1, market_set1, results_1 = render_sequence(col1a, 1)
+weights2, market_set2, results_2 = render_sequence(col2a, 2)
 
 
 tab1a, tab2a, tab3a, tab4a = st.tabs(["BTFD", "Multiplikátor", "Nákupní částka", "Investovaná částka"])
