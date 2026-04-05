@@ -159,6 +159,7 @@ def get_reference_times(df, hour):
 
 def simulate_day_hourly(data, start_idx, weights, market_mask, invest_per_day,limit_levels,limit_multipliers,btfd,fee_limit,fee_market):
     end_idx = start_idx + 24
+    SATOSHI = 1e-8
 
     if end_idx > len(data):
         return None
@@ -174,6 +175,7 @@ def simulate_day_hourly(data, start_idx, weights, market_mask, invest_per_day,li
     closes = day_data['Close'].values
 
     btc_bought = 0
+    cost = 0
     fills = np.zeros(len(limit_levels), dtype=np.int8)
 
     invest_limit_total = 0  # investice přes limitní nákup
@@ -193,10 +195,9 @@ def simulate_day_hourly(data, start_idx, weights, market_mask, invest_per_day,li
             multiplier = btfd['Multiplier'][btfd_idx]
             value = btfd['BTFD'][btfd_idx]
             buy_price = lows[hit_indices[0]]
-            fills[i] = 1
             invest_amount = invest_per_day * w * multiplier
-            effective_invest = invest_amount * (1 - fee_limit)
-            invest_limit_total += invest_amount
+            fee = fee_limit
+            effective_invest = invest_amount * (1 - fee)
 
         elif market_mask[i]:
             btfd_idx = start_idx + len(closes) - 2
@@ -204,14 +205,31 @@ def simulate_day_hourly(data, start_idx, weights, market_mask, invest_per_day,li
             value = btfd['BTFD'][btfd_idx]
             buy_price = closes[-2]
             invest_amount = invest_per_day * w * multiplier
-            effective_invest = invest_amount * (1 - fee_market)
-            invest_market_total += invest_amount
+            fee = fee_market
+            effective_invest = invest_amount * (1 - fee)
 
         else:
             continue
 
-        btc_bought = effective_invest / buy_price
-        cost = invest_amount
+        raw_btc = effective_invest / buy_price
+        btc = np.floor(raw_btc / SATOSHI) * SATOSHI #checking for satoshi precision
+
+        if btc == 0:
+            continue
+
+        real_spent = btc * buy_price
+        trade_cost = real_spent / (1 - fee)
+
+        if len(hit_indices) > 0:
+            fills[i] = 1
+            invest_limit_total += trade_cost
+        elif market_mask[i]:
+            invest_market_total += trade_cost
+
+
+        btc_bought += btc
+        cost += trade_cost
+
         btfd_multiplier = multiplier
         btfd_value = value
 
