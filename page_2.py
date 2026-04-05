@@ -645,10 +645,30 @@ if results_1 and results_2:
 
         df_btfd_plot_2["Cumulative"] = (results_2[0]["total_cost_series"])
         
-        btfd_fig = px.line(
-            df_btfd_plot_1,
-            x="Datetime",
-            y="BTFD",
+        btfd_fig = go.Figure()
+
+        btfd_fig.add_trace(
+            go.Scatter(
+                x=df_btfd_plot_1["Datetime"],
+                y=df_btfd_plot_1["BTFD"],
+                mode='lines',
+                name='Strategie 1',
+                line=dict(color='blue', width=1.5),
+                customdata=df_btfd_plot_1["Datetime"].dt.strftime('%d.%m.%Y'),
+                hovertemplate="<b>Strategie 1: BTFD:</b> %{y:.2f}%<br><b>Datum:</b> %{customdata}<extra></extra>"
+            )
+        )
+
+        btfd_fig.add_trace(
+            go.Scatter(
+                x=df_btfd_plot_2["Datetime"],
+                y=df_btfd_plot_2["BTFD"],
+                mode='lines',
+                name='Strategie 2',
+                line=dict(color='green', width=1.5),  # zde nastavíš barvu
+                customdata=df_btfd_plot_2["Datetime"].dt.strftime('%d.%m.%Y'),
+                hovertemplate="<b>Strategie 2: BTFD:</b> %{y:.2f}%<br><b>Datum:</b> %{customdata}<extra></extra>"
+            )
         )
 
         btfd_fig.add_hline(y=BTFD_MIN, line_dash="dash", line_color="red", annotation_text=f"{BTFD_MIN} %",
@@ -671,25 +691,41 @@ if results_1 and results_2:
         btfd_fig.update_layout(
             xaxis_title="Čas",
             yaxis_title="Hodnota indexu BTFD [%]",
-            hovermode="x unified"
-        )
-
-        # tooltip
-        btfd_fig.update_traces(
-            line=dict(color="blue", width=1.5),
-            customdata=btc_thinned['date_cz'],
-            hovertemplate=(
-                    "<b>Hodnota BTFD:</b> %{y:.2f}%<br>" +
-                    "<b>Datum:</b> %{customdata}" +
-                    "<extra></extra>"
+            hovermode="x unified",
+            legend=dict(
+                x=0.01,
+                y=0.01,
+                xanchor="left",
+                yanchor="bottom",
             )
         )
 
-        multiplier_fig = px.line(
-            df_btfd_plot_1,
-            x="Datetime",
-            y="Multiplier",
+        multiplier_fig = go.Figure()
+
+        multiplier_fig.add_trace(
+            go.Scatter(
+                x=df_btfd_plot_1["Datetime"],
+                y=df_btfd_plot_1["Multiplier"],
+                mode='lines',
+                name='Strategie 1',
+                line=dict(color='blue', width=1.5),
+                customdata=df_btfd_plot_1["Datetime"].dt.strftime('%d.%m.%Y'),
+                hovertemplate="<b>Strategie 1: Hodnota multiplikátoru:</b> %{y:.2f}x<br><b>Datum:</b> %{customdata}<extra></extra>"
+            )
         )
+
+        multiplier_fig.add_trace(
+            go.Scatter(
+                x=df_btfd_plot_2["Datetime"],
+                y=df_btfd_plot_2["Multiplier"],
+                mode='lines',
+                name='Strategie 2',
+                line=dict(color='red', width=1.5),  # zde nastavíš barvu
+                customdata=df_btfd_plot_2["Datetime"].dt.strftime('%d.%m.%Y'),
+                hovertemplate="<b>Strategie 2: Hodnota multiplikátoru:</b> %{y:.2f}x<br><b>Datum:</b> %{customdata}<extra></extra>"
+            )
+        )
+
         multiplier_fig.add_hline(y=MAX_MULTIPLIER, line_dash="dash", line_color="green",
                                  annotation_text=f"Max: {MAX_MULTIPLIER}x", annotation_position="top right")
         multiplier_fig.add_hline(y=1.0, line_dash="dash", line_color="green", annotation_text=f"Min: 1.0x",
@@ -710,25 +746,41 @@ if results_1 and results_2:
         multiplier_fig.update_layout(
             xaxis_title="Čas",
             yaxis_title="Hodnota multiplikátoru",
-            hovermode="x unified"
-        )
-
-        # tooltip
-        multiplier_fig.update_traces(
-            line=dict(color="red", width=1.5),
-            customdata=btc_thinned['date_cz'],
-            hovertemplate=(
-                    "<b>Hodnota multiplikátoru:</b> %{y:.2f}x<br>" +
-                    "<b>Datum:</b> %{customdata}" +
-                    "<extra></extra>"
+            hovermode="x unified",
+            legend=dict(
+                x=0.01,
+                y=0.01,
+                xanchor="left",
+                yanchor="bottom",
             )
         )
 
-        buy_fig = px.line(
-            df_btfd_plot_1,
-            x="Datetime",
-            y=df_btfd_plot_1["Multiplier"] * INVEST_PER_DAY
+        buy_fig = go.Figure()
+
+        buy_fig.add_trace(
+            go.Scatter(
+                x=df_btfd_plot_1["Datetime"],
+                y=df_btfd_plot_1["Multiplier"] * INVEST_PER_DAY,
+                mode='lines',
+                name='Strategie 1',
+                line=dict(color='blue', width=1.5),
+                customdata=df_btfd_plot_1["Datetime"].dt.strftime('%d.%m.%Y'),
+                hovertemplate="<b>Strategie 1: Nákupní částka:</b> %{y:.2f} USD<br><b>Datum:</b> %{customdata}<extra></extra>"
+            )
         )
+
+        buy_fig.add_trace(
+            go.Scatter(
+                x=df_btfd_plot_2["Datetime"],
+                y=df_btfd_plot_2["Multiplier"] * INVEST_PER_DAY,
+                mode='lines',
+                name='Strategie 2',
+                line=dict(color='red', width=1.5),  # zde nastavíš barvu
+                customdata=df_btfd_plot_2["Datetime"].dt.strftime('%d.%m.%Y'),
+                hovertemplate="<b>Strategie 2: Nákupní částka:</b> %{y:.2f} USD<br><b>Datum:</b> %{customdata}<extra></extra>"
+            )
+        )
+
         buy_fig.add_hline(y=INVEST_PER_DAY, line_dash="dash", line_color="#F7931A",
                           annotation_text=f"Fixní investice: {INVEST_PER_DAY} USD", annotation_position="bottom right")
 
@@ -746,16 +798,12 @@ if results_1 and results_2:
         buy_fig.update_layout(
             xaxis_title="Čas",
             yaxis_title="Nákupní částka [USD]",
-            hovermode="x unified"
-        )
-
-        buy_fig.update_traces(
-            line=dict(color="green", width=1.5),
-            customdata=btc_thinned['date_cz'],
-            hovertemplate=(
-                    "<b>Investovaná částka:</b> %{y:.2f} USD<br>" +
-                    "<b>Datum:</b> %{customdata}" +
-                    "<extra></extra>"
+            hovermode="x unified",
+            legend=dict(
+                x=0.01,
+                y=0.99,
+                xanchor="left",
+                yanchor="top",
             )
         )
 
@@ -768,9 +816,21 @@ if results_1 and results_2:
                 y=df_btfd_plot_1["Cumulative"],
                 mode="lines",
                 line=dict(color="green", width=1.5),
-                name="Dynamická investice",
+                name="Strategie 1",
                 customdata=btc_thinned['date_cz'],
-                hovertemplate="<b>Celkově investováno (dynamická částka):</b> %{y:.2f} USD<br><b>Datum:</b> %{customdata}<extra></extra>"
+                hovertemplate="<b>Strategie 1: Celkově investováno (dynamická částka):</b> %{y:.2f} USD<br><b>Datum:</b> %{customdata}<extra></extra>"
+            )
+        )
+
+        invest_fig.add_trace(
+            go.Scatter(
+                x=df_btfd_plot_2["Datetime"],
+                y=df_btfd_plot_2["Cumulative"],
+                mode="lines",
+                line=dict(color="red", width=1.5),
+                name="Strategie 2",
+                customdata=btc_thinned['date_cz'],
+                hovertemplate="<b>Strategie 2: Celkově investováno (dynamická částka):</b> %{y:.2f} USD<br><b>Datum:</b> %{customdata}<extra></extra>"
             )
         )
 
@@ -807,25 +867,6 @@ if results_1 and results_2:
                 y=0.99,
                 xanchor="left",
                 yanchor="top",
-            )
-        )
-
-        invest_fig.data[0].update(
-            customdata=btc_thinned['date_cz'],
-            name="Dynamická investice",
-            showlegend=True,
-            hovertemplate=(
-                    "<b>Celkově investováno (dynamická částka):</b> %{y:.2f} USD<br>" +
-                    "<b>Datum:</b> %{customdata}" +
-                    "<extra></extra>"
-            )
-        )
-        invest_fig.data[1].update(
-            customdata=btc_thinned['date_cz'],
-            hovertemplate=(
-                    "<b>Celkově investováno (fixní částka):</b> %{y:.2f} USD<br>" +
-                    "<b>Datum:</b> %{customdata}" +
-                    "<extra></extra>"
             )
         )
 
