@@ -14,15 +14,10 @@ start = time.time()
 
 btc_full = tr.load_btc_data()
 
-btc = tr.get_filtered_data(
-    btc_full,
-    st.session_state.start_date,
-    st.session_state.end_date
-)
+
 last_dt = btc_full['Datetime'].max() - dt.timedelta(hours=(24-HOUR))
 year_before = last_dt - dt.timedelta(days=365)
-last_price = btc.iloc[-1]['Close']
-ref_positions = np.where(btc['Datetime'].dt.hour == HOUR)[0]
+
 # --- Mapping pevně definovaných období ---
 period_map = {
     "1 roku": 365,
@@ -82,6 +77,13 @@ elif date_option == "Vlastní období":
         on_change=on_end_change,
     )
 
+btc = tr.get_filtered_data(
+    btc_full,
+    st.session_state.start_date,
+    st.session_state.end_date
+)
+last_price = btc.iloc[-1]['Close']
+ref_positions = np.where(btc['Datetime'].dt.hour == HOUR)[0]
 print(f"Počet záznamů pro simulaci: {len(btc)}")
 
 
