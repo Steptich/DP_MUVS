@@ -770,6 +770,178 @@ with tab4a:
     st.plotly_chart(st.session_state.invest_fig, key="invest_plot")
 
 
+plot_key2 = (
+    f"{st.session_state.btfd_plot_key}_"
+    f"{st.session_state.fee_market_slider}_{st.session_state.fee_limit_slider}"
+)
+
+# tooltip
+if 'trade_plot_key' not in st.session_state or st.session_state.trade_plot_key != plot_key2:
+    df_trade_plot = pd.DataFrame({
+        "Datetime": pd.to_datetime(btc.loc[ref_positions, "Datetime"][:len(results[3]["btfd_value_series"])]),
+        "ROI": results[3]["total_roi_series"],
+        "Avg_price": results[3]["avg_price_series"],
+        "Total_value": results[3]["total_value_series"],
+        "Total_btc": results[3]["total_btc_series"],
+    })
+
+    roi_fig = px.line(
+        df_trade_plot,
+        x="Datetime",
+        y="ROI",
+    )
+
+    # formát osy X
+    roi_fig.update_xaxes(
+        tickformat="%d.%m.%Y",  # formát osy
+        showgrid=True,  # zapnutí vertikálních grid line
+        gridwidth=1,  # tloušťka gridu
+        tickangle=-45,  # naklonění tick labelů
+        range=[
+            df_trade_plot["Datetime"].min(),
+            df_trade_plot["Datetime"].max() + dt.timedelta(days=2)
+        ]
+    )
+
+    roi_fig.update_layout(
+        xaxis_title="Čas",
+        yaxis_title="Výnosnost investice [%]",
+        hovermode="x unified"
+    )
+
+    # tooltip
+    roi_fig.update_traces(
+        line=dict(color="blue", width=1.5),
+        customdata=btc_thinned['date_cz'],
+        hovertemplate=(
+                "<b>Výnosnost investice:</b> %{y:.2f}%<br>" +
+                "<b>Datum:</b> %{customdata}" +
+                "<extra></extra>"
+        )
+    )
+
+    avg_price_fig = px.line(
+        df_trade_plot,
+        x="Datetime",
+        y="Avg_price",
+    )
+
+    # formát osy X
+    avg_price_fig.update_xaxes(
+        tickformat="%d.%m.%Y",  # formát osy
+        showgrid=True,  # zapnutí vertikálních grid line
+        gridwidth=1,  # tloušťka gridu
+        tickangle=-45,  # naklonění tick labelů
+        range=[
+            df_trade_plot["Datetime"].min(),
+            df_trade_plot["Datetime"].max() + dt.timedelta(days=2)
+        ]
+    )
+
+    avg_price_fig.update_layout(
+        xaxis_title="Čas",
+        yaxis_title="Průměrná nákupní cena [USD]",
+        hovermode="x unified"
+    )
+
+    # tooltip
+    avg_price_fig.update_traces(
+        line=dict(color="blue", width=1.5),
+        customdata=btc_thinned['date_cz'],
+        hovertemplate=(
+                "<b>Průměrná nákupní cena:</b> %{y:.2f} USD<br>" +
+                "<b>Datum:</b> %{customdata}" +
+                "<extra></extra>"
+        )
+    )
+
+    total_value_fig = px.line(
+        df_trade_plot,
+        x="Datetime",
+        y="Total_value",
+    )
+
+    # formát osy X
+    total_value_fig.update_xaxes(
+        tickformat="%d.%m.%Y",  # formát osy
+        showgrid=True,  # zapnutí vertikálních grid line
+        gridwidth=1,  # tloušťka gridu
+        tickangle=-45,  # naklonění tick labelů
+        range=[
+            df_trade_plot["Datetime"].min(),
+            df_trade_plot["Datetime"].max() + dt.timedelta(days=2)
+        ]
+    )
+
+    total_value_fig.update_layout(
+        xaxis_title="Čas",
+        yaxis_title="Celková hodnota [USD]",
+        hovermode="x unified"
+    )
+
+    # tooltip
+    total_value_fig.update_traces(
+        line=dict(color="blue", width=1.5),
+        customdata=btc_thinned['date_cz'],
+        hovertemplate=(
+                "<b>Celková hodnota:</b> %{y:.2f} USD<br>" +
+                "<b>Datum:</b> %{customdata}" +
+                "<extra></extra>"
+        )
+    )
+
+    total_btc_fig = px.line(
+        df_trade_plot,
+        x="Datetime",
+        y="Total_btc",
+    )
+
+    # formát osy X
+    total_btc_fig.update_xaxes(
+        tickformat="%d.%m.%Y",  # formát osy
+        showgrid=True,  # zapnutí vertikálních grid line
+        gridwidth=1,  # tloušťka gridu
+        tickangle=-45,  # naklonění tick labelů
+        range=[
+            df_trade_plot["Datetime"].min(),
+            df_trade_plot["Datetime"].max() + dt.timedelta(days=2)
+        ]
+    )
+
+    total_btc_fig.update_layout(
+        xaxis_title="Čas",
+        yaxis_title="Celkové množství BTC",
+        hovermode="x unified"
+    )
+
+    # tooltip
+    total_btc_fig.update_traces(
+        line=dict(color="blue", width=1.5),
+        customdata=btc_thinned['date_cz'],
+        hovertemplate=(
+                "<b>Celkové množství BTC:</b> %{y:.8f}<br>" +
+                "<b>Datum:</b> %{customdata}" +
+                "<extra></extra>"
+        )
+    )
+
+    st.session_state.roi_fig = roi_fig
+    st.session_state.avg_price_fig = avg_price_fig
+    st.session_state.total_value_fig = total_value_fig
+    st.session_state.total_btc_fig = total_btc_fig
+    st.session_state.trade_plot_key = plot_key2
+
+tab1b, tab2b, tab3b, tab4b = st.tabs(["Procentuální zhodnocení", "Průměrná nákupní cena", "Aktuální hodnota", "Nakoupené množství BTC"])
+
+with tab1b:
+    st.plotly_chart(st.session_state.roi_fig, key="roi_plot")
+with tab2b:
+    st.plotly_chart(st.session_state.avg_price_fig, key="avg_price_plot")
+with tab3b:
+    st.plotly_chart(st.session_state.total_value_fig, key="total_value_plot")
+with tab4b:
+    st.plotly_chart(st.session_state.total_btc_fig, key="total_btc_plot")
+    
 # --- 1. TOP podle průměrné ceny ---
 top_price = sorted(results, key=lambda x: x['avg_price_series'][-1])[:5]
 st.write("## 📊 TOP 5 strategií podle průměrné nákupní ceny")
