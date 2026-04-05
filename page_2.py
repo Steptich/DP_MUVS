@@ -442,7 +442,7 @@ def simulate_configuration(
             count_days = day_i  # posledni den nemusi byt nakup
             continue
 
-        btc_bought, cost, fills, inv_l, inv_m, btfd_value, btfd_multiplier = res
+        btc_bought, cost, fills, inv_l, inv_m, btfd_value, btfd_multiplier, buy_idx = res
 
         total_btc += btc_bought
         total_cost += cost
