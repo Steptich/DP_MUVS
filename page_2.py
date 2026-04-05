@@ -593,12 +593,12 @@ plot_key1 = (
 if 'btfd_plot_key' not in st.session_state or st.session_state.btfd_plot_key != plot_key1:
 
     df_btfd_plot = pd.DataFrame({
-        "Datetime": pd.to_datetime(btc.loc[ref_positions, "Datetime"][:len(results[3]["btfd_value_series"])]),
-        "BTFD": results[3]["btfd_value_series"],
-        "Multiplier": results[3]["btfd_multiplier_series"]
+        "Datetime": pd.to_datetime(btc.loc[ref_positions, "Datetime"][:len(results_1[0]["btfd_value_series"])]),
+        "BTFD": results_1[0]["btfd_value_series"],
+        "Multiplier": results_1[0]["btfd_multiplier_series"]
     })
 
-    df_btfd_plot["Cumulative"] = (results[3]["total_cost_series"])
+    df_btfd_plot["Cumulative"] = (results_1[0]["total_cost_series"])
 
     btfd_fig = px.line(
         df_btfd_plot,
@@ -811,11 +811,11 @@ plot_key2 = (
 # tooltip
 if 'trade_plot_key' not in st.session_state or st.session_state.trade_plot_key != plot_key2:
     df_trade_plot = pd.DataFrame({
-        "Datetime": pd.to_datetime(btc.loc[ref_positions, "Datetime"][:len(results[3]["btfd_value_series"])]),
-        "ROI": results[3]["total_roi_series"],
-        "Avg_price": results[3]["avg_price_series"],
-        "Total_value": results[3]["total_value_series"],
-        "Total_btc": results[3]["total_btc_series"],
+        "Datetime": pd.to_datetime(btc.loc[ref_positions, "Datetime"][:len(results_1[0]["btfd_value_series"])]),
+        "ROI": results_1[0]["total_roi_series"],
+        "Avg_price": results_1[0]["avg_price_series"],
+        "Total_value": results_1[0]["total_value_series"],
+        "Total_btc": results_1[0]["total_btc_series"],
     })
 
     roi_fig = px.line(
@@ -974,48 +974,45 @@ with tab3b:
     st.plotly_chart(st.session_state.total_value_fig, key="total_value_plot")
 with tab4b:
     st.plotly_chart(st.session_state.total_btc_fig, key="total_btc_plot")
-    
-# --- 1. TOP podle průměrné ceny ---
-top_price = sorted(results, key=lambda x: x['avg_price_series'][-1])[:5]
-st.write("## 📊 TOP 5 strategií podle průměrné nákupní ceny")
 
-for i, r in enumerate(top_price, 1):
-    fills = {k: round(v * 100, 1) for k, v in r['avg_fill_rate'].items()}
-    st.write(f"**{i}. Váhy:** {list(r['weights'])}, **Tržní nákup:** {list(r['market_buy_for'])}")
-    st.write(f"- Průměrná cena: {r['avg_price_series'][-1]:.2f} USD")
-    st.write(f"- Celkové BTC: {r['total_btc']:.8f}")
-    st.write(f"- Celkově vložený kapitál: {r['total_cost']:.2f} USD")
-    st.write(f"- Počet dnů: {r['days']}")
-    st.write(f"- Celkový zisk: {r['total_profit']:.2f} USD")
-    st.write(f"- ROI: {r['ROI']:.2f} %")
-    st.write(f"- ROI p.a.: {r['ROI_pa']:.2f} %")
-    st.write(f"- Využití kapitálu: {r['efficiency']:.2f} %")
-    if r['uninvested_amount'] > 0:
-        st.write(f"- Neinvestováno: {r['uninvested_amount']:.2f} USD")
-    else:
-        st.write(f"- Přebytečně investováno: {-r['uninvested_amount']:.2f} USD")
-    st.write(f"- Celkem: {r['total_amount']:.2f} USD")
-    st.write(f"- Naplňění limitných příkazů: {fills}")
-    st.write(f"- Limit %: {r['percent_limit_invest']:.1f} %")
-    st.write(f"- Market %: {r['percent_market_invest']:.1f} %")
-    st.write("---")
+# --- 1. TOP podle průměrné ceny ---
+
+fills = {k: round(v * 100, 1) for k, v in results_1[0]['avg_fill_rate'].items()}
+st.write(f" Váhy: {list(results_1[0]['weights'])}, **Tržní nákup:** {list(results_1[0]['market_buy_for'])}")
+st.write(f"- Průměrná cena: {results_1[0]['avg_price_series'][-1]:.2f} USD")
+st.write(f"- Celkové BTC: {results_1[0]['total_btc']:.8f}")
+st.write(f"- Celkově vložený kapitál: {results_1[0]['total_cost']:.2f} USD")
+st.write(f"- Počet dnů: {results_1[0]['days']}")
+st.write(f"- Celkový zisk: {results_1[0]['total_profit']:.2f} USD")
+st.write(f"- ROI: {results_1[0]['ROI']:.2f} %")
+st.write(f"- ROI p.a.: {results_1[0]['ROI_pa']:.2f} %")
+st.write(f"- Využití kapitálu: {results_1[0]['efficiency']:.2f} %")
+if results_1[0]['uninvested_amount'] > 0:
+    st.write(f"- Neinvestováno: {results_1[0]['uninvested_amount']:.2f} USD")
+else:
+    st.write(f"- Přebytečně investováno: {-results_1[0]['uninvested_amount']:.2f} USD")
+st.write(f"- Celkem: {results_1[0]['total_amount']:.2f} USD")
+st.write(f"- Naplňění limitných příkazů: {fills}")
+st.write(f"- Limit %: {results_1[0]['percent_limit_invest']:.1f} %")
+st.write(f"- Market %: {results_1[0]['percent_market_invest']:.1f} %")
+st.write("---")
 
 ## --- 2. TOP podle BTC ---
 # top_btc = sorted(results, key=lambda x: x['total_btc'], reverse=True)[:5]
 #
 # st.write("## 📊 TOP 5 strategií podle množství BTC")
 # for i, r in enumerate(top_btc, 1):
-#    fills = {k: round(v * 100, 1) for k, v in r['avg_fill_rate'].items()}
-#    st.write(f"**{i}. Váhy:** {list(r['weights'])}, **Tržní nákup:** {list(r['market_buy_for'])}")
-#    st.write(f"- BTC: {r['total_btc']:.6f}")
-#    st.write(f"- Průměrná cena: {r['avg_price']:.2f} USD")
-#    st.write(f"- ROI: {r['ROI']:.2f} %")
-#    st.write(f"- ROI p.a.: {r['ROI_pa']:.2f} %")
-#    st.write(f"- Zisk: {r['total_profit']:.2f} USD")
-#    st.write(f"- Efektivita: {r['efficiency']:.2f} %")
+#    fills = {k: round(v * 100, 1) for k, v in results_1[0]['avg_fill_rate'].items()}
+#    st.write(f"**{i}. Váhy:** {list(results_1[0]['weights'])}, **Tržní nákup:** {list(results_1[0]['market_buy_for'])}")
+#    st.write(f"- BTC: {results_1[0]['total_btc']:.6f}")
+#    st.write(f"- Průměrná cena: {results_1[0]['avg_price']:.2f} USD")
+#    st.write(f"- ROI: {results_1[0]['ROI']:.2f} %")
+#    st.write(f"- ROI p.a.: {results_1[0]['ROI_pa']:.2f} %")
+#    st.write(f"- Zisk: {results_1[0]['total_profit']:.2f} USD")
+#    st.write(f"- Efektivita: {results_1[0]['efficiency']:.2f} %")
 #    st.write(f"- Fill rate: {fills}")
-#    st.write(f"- Limit %: {r['percent_limit_invest']:.1f} %")
-#    st.write(f"- Market %: {r['percent_market_invest']:.1f} %")
+#    st.write(f"- Limit %: {results_1[0]['percent_limit_invest']:.1f} %")
+#    st.write(f"- Market %: {results_1[0]['percent_market_invest']:.1f} %")
 #    st.write("---")
 #
 ## --- 3. TOP podle ROI ---
@@ -1023,17 +1020,17 @@ for i, r in enumerate(top_price, 1):
 #
 # st.write("## 📊 TOP 5 strategií podle ROI")
 # for i, r in enumerate(top_roi, 1):
-#    fills = {k: round(v * 100, 1) for k, v in r['avg_fill_rate'].items()}
-#    st.write(f"**{i}. Váhy:** {list(r['weights'])}, **Tržní nákup:** {list(r['market_buy_for'])}")
-#    st.write(f"- ROI: {r['ROI']:.2f} %")
-#    st.write(f"- ROI p.a.: {r['ROI_pa']:.2f} %")
-#    st.write(f"- Zisk: {r['total_profit']:.2f} USD")
-#    st.write(f"- BTC: {r['total_btc']:.6f}")
-#    st.write(f"- Průměrná cena: {r['avg_price']:.2f} USD")
-#    st.write(f"- Efektivita: {r['efficiency']:.2f} %")
+#    fills = {k: round(v * 100, 1) for k, v in results_1[0]['avg_fill_rate'].items()}
+#    st.write(f"**{i}. Váhy:** {list(results_1[0]['weights'])}, **Tržní nákup:** {list(results_1[0]['market_buy_for'])}")
+#    st.write(f"- ROI: {results_1[0]['ROI']:.2f} %")
+#    st.write(f"- ROI p.a.: {results_1[0]['ROI_pa']:.2f} %")
+#    st.write(f"- Zisk: {results_1[0]['total_profit']:.2f} USD")
+#    st.write(f"- BTC: {results_1[0]['total_btc']:.6f}")
+#    st.write(f"- Průměrná cena: {results_1[0]['avg_price']:.2f} USD")
+#    st.write(f"- Efektivita: {results_1[0]['efficiency']:.2f} %")
 #    st.write(f"- Fill rate: {fills}")
-#    st.write(f"- Limit %: {r['percent_limit_invest']:.1f} %")
-#    st.write(f"- Market %: {r['percent_market_invest']:.1f} %")
+#    st.write(f"- Limit %: {results_1[0]['percent_limit_invest']:.1f} %")
+#    st.write(f"- Market %: {results_1[0]['percent_market_invest']:.1f} %")
 #    st.write("---")
 
 # --- BTFD statistika ---
