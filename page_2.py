@@ -559,16 +559,16 @@ plot_key1 = (
 # tooltip
 if 'btfd_plot_key' not in st.session_state or st.session_state.btfd_plot_key != plot_key1:
 
-    df_plot = pd.DataFrame({
+    df_btfd_plot = pd.DataFrame({
         "Datetime": pd.to_datetime(btc.loc[ref_positions, "Datetime"][:len(results[3]["btfd_value_series"])]),
         "BTFD": results[3]["btfd_value_series"],
         "Multiplier": results[3]["btfd_multiplier_series"]
     })
 
-    df_plot["Cumulative"] = (df_plot["Multiplier"] * INVEST_PER_DAY).cumsum().shift(1, fill_value=0)
+    df_btfd_plot["Cumulative"] = (df_btfd_plot["Multiplier"] * INVEST_PER_DAY).cumsum().shift(1, fill_value=0)
 
     btfd_fig = px.line(
-        df_plot,
+        df_btfd_plot,
         x="Datetime",
         y="BTFD",
     )
@@ -585,8 +585,8 @@ if 'btfd_plot_key' not in st.session_state or st.session_state.btfd_plot_key != 
         gridwidth=1,  # tloušťka gridu
         tickangle=-45,  # naklonění tick labelů
         range=[
-            df_plot["Datetime"].min(),
-            df_plot["Datetime"].max() + dt.timedelta(days=2)
+            df_btfd_plot["Datetime"].min(),
+            df_btfd_plot["Datetime"].max() + dt.timedelta(days=2)
         ]
     )
 
@@ -608,7 +608,7 @@ if 'btfd_plot_key' not in st.session_state or st.session_state.btfd_plot_key != 
     )
 
     multiplier_fig = px.line(
-        df_plot,
+        df_btfd_plot,
         x="Datetime",
         y="Multiplier",
     )
@@ -624,8 +624,8 @@ if 'btfd_plot_key' not in st.session_state or st.session_state.btfd_plot_key != 
         gridwidth=1,  # tloušťka gridu
         tickangle=-45,  # naklonění tick labelů
         range=[
-            df_plot["Datetime"].min(),
-            df_plot["Datetime"].max() + dt.timedelta(days=2)
+            df_btfd_plot["Datetime"].min(),
+            df_btfd_plot["Datetime"].max() + dt.timedelta(days=2)
         ]
     )
 
@@ -647,9 +647,9 @@ if 'btfd_plot_key' not in st.session_state or st.session_state.btfd_plot_key != 
     )
 
     buy_fig = px.line(
-        df_plot,
+        df_btfd_plot,
         x="Datetime",
-        y=df_plot["Multiplier"] * INVEST_PER_DAY
+        y=df_btfd_plot["Multiplier"] * INVEST_PER_DAY
     )
     buy_fig.add_hline(y=INVEST_PER_DAY, line_dash="dash", line_color="#F7931A",
                       annotation_text=f"Fixní investice: {INVEST_PER_DAY} USD", annotation_position="bottom right")
@@ -686,8 +686,8 @@ if 'btfd_plot_key' not in st.session_state or st.session_state.btfd_plot_key != 
     # --- spodní: dynamická (plná) ---
     invest_fig.add_trace(
         go.Scatter(
-            x=df_plot["Datetime"],
-            y=df_plot["Cumulative"],
+            x=df_btfd_plot["Datetime"],
+            y=df_btfd_plot["Cumulative"],
             mode="lines",
             line=dict(color="green", width=1.5),
             name="Dynamická investice",
@@ -699,8 +699,8 @@ if 'btfd_plot_key' not in st.session_state or st.session_state.btfd_plot_key != 
     # --- vrchní: fixní (dash) ---
     invest_fig.add_trace(
         go.Scatter(
-            x=df_plot["Datetime"],
-            y=INVEST_PER_DAY * np.arange(len(df_plot)),
+            x=df_btfd_plot["Datetime"],
+            y=INVEST_PER_DAY * np.arange(len(df_btfd_plot)),
             mode="lines",
             line=dict(color="#F7931A", dash="dash", width=1.5),
             name=f"Fixní investice: {INVEST_PER_DAY} USD",
@@ -715,8 +715,8 @@ if 'btfd_plot_key' not in st.session_state or st.session_state.btfd_plot_key != 
         gridwidth=1,  # tloušťka gridu
         tickangle=-45,  # naklonění tick labelů
         range=[
-            df_plot["Datetime"].min(),
-            df_plot["Datetime"].max() + dt.timedelta(days=2)
+            df_btfd_plot["Datetime"].min(),
+            df_btfd_plot["Datetime"].max() + dt.timedelta(days=2)
         ]
     )
 
