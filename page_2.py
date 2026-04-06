@@ -618,8 +618,10 @@ weights1, market_set1, results_1 = render_sequence(col1a, 1)
 weights2, market_set2, results_2 = render_sequence(col2a, 2)
 
 if results_1 and results_2:
-    weights_key = "_".join(str(st.session_state[f"slider_weight1_lvl{lvl}"]) for lvl in limit_levels)
-    market_key = "_".join(str(int(st.session_state[f"checkbox_market1_lvl{lvl}"])) for lvl in limit_levels)
+    weights_key1 = "_".join(str(st.session_state[f"slider_weight1_lvl{lvl}"]) for lvl in limit_levels)
+    weights_key2 = "_".join(str(st.session_state[f"slider_weight2_lvl{lvl}"]) for lvl in limit_levels)
+    market_key1 = "_".join(str(int(st.session_state[f"checkbox_market1_lvl{lvl}"])) for lvl in limit_levels)
+    market_key2 = "_".join(str(int(st.session_state[f"checkbox_market2_lvl{lvl}"])) for lvl in limit_levels)
 
     tab1a, tab2a, tab3a, tab4a = st.tabs(["BTFD", "Multiplikátor", "Nákupní částka", "Investovaná částka"])
 
@@ -627,8 +629,9 @@ if results_1 and results_2:
         f"{st.session_state.start_date}_{st.session_state.end_date}_"
         f"{st.session_state.btfdmin_slider}_{st.session_state.btfdMULTI_slider}"
         f"{st.session_state.investment_number}_"
-        f"{st.session_state.trade_plot_key}_"
-        f"{weights_key}_{market_key}"
+        f"{st.session_state.fee_market_slider}_{st.session_state.fee_limit_slider}_"
+        f"{weights_key1}_{market_key1}_{weights_key2}_{market_key2}"
+
     )
     # tooltip
     if 'btfd_plot_key' not in st.session_state or st.session_state.btfd_plot_key != plot_key1:
@@ -894,8 +897,7 @@ if results_1 and results_2:
 
 
     plot_key2 = (
-        f"{st.session_state.btfd_plot_key}_"
-        f"{st.session_state.fee_market_slider}_{st.session_state.fee_limit_slider}"
+        f"{st.session_state.btfd_plot_key}"
     )
 
     # tooltip
