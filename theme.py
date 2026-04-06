@@ -25,6 +25,7 @@ def theme_mode():
 
     # --- Aplikace theme při prvním run ---
     if not ms.theme_applied:
+        st.session_state["theme_changed"] = False
         for k, v in themes[ms.theme_mode].items():
             st._config.set_option(k, v)
         ms.theme_applied = True
@@ -42,6 +43,7 @@ def theme_mode():
 
     # --- Pokud uživatel změní mode ---
     if selected != ms.theme_mode:
+        st.session_state["theme_changed"] = True
         ms.theme_mode = selected
         for k, v in themes[selected].items():
             st._config.set_option(k, v)
