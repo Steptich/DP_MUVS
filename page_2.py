@@ -547,36 +547,34 @@ def run_backtest(weights, market_set):
 
     return results
 
-# Inicializace session state, pokud ještě neexistuje
-def init_session_state(seq_number):
-    for lvl in limit_levels:
-        slider_key = f"slider_weight{seq_number}_lvl{lvl}"
-        checkbox_key = f"checkbox_market{seq_number}_lvl{lvl}"
-        if slider_key not in st.session_state:
-            st.session_state[slider_key] = 0.0
-        if checkbox_key not in st.session_state:
-            st.session_state[checkbox_key] = False
-
-# Funkce pro vykreslení jedné sekvence
+seq_number_max= 2  # počet sekvencí, pro které máme sliders/checkboxes
+# --- Funkce pro vykreslení jedné sekvence ---
 def render_sequence(col, seq_number):
-    init_session_state(seq_number)
+
     with col:
         st.subheader(f"Váhy pro jednotlivé levely - sekvence {seq_number}")
         weights = []
 
-        for lvl in limit_levels:
+        # Získat minulé hodnoty, pokud jsou a pokud se změnilo téma
+        prev_weights = st.session_state.get(f"weights_seq{seq_number}", [0.0]*len(limit_levels))
+
+        for i, lvl in enumerate(limit_levels):
             slider_key = f"slider_weight{seq_number}_lvl{lvl}"
+            # Pokud máme předchozí hodnotu a změnilo se téma, použijeme ji
+            slider_value = prev_weights[i]
             w = st.slider(
                 f"Level {lvl} %",
                 min_value=0.0,
                 max_value=1.0,
-                value=st.session_state[slider_key],  # jen pro inicializaci
                 step=0.05,
+                value=slider_value,
                 key=slider_key
             )
             weights.append(w)
 
-        weights = tuple(weights)
+        # Po vykreslení sliderů aktualizujeme session_state
+        st.session_state[f"weights_seq{seq_number}"] = tuple(weights)
+
         total_weight = sum(weights)
 
         valid = True
@@ -597,7 +595,6 @@ def render_sequence(col, seq_number):
             if weights[i] > 0:
                 checked = st.checkbox(
                     f"Market buy pro level {lvl}",
-                    value=st.session_state[checkbox_key],
                     key=checkbox_key
                 )
                 if checked:
