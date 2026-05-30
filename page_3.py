@@ -631,15 +631,444 @@ if uploaded_file:
                 for r in seq["results"]
             ]
         )
+
+
+        if not df.empty:
+
+            tab1a, tab2a, tab3a, tab4a, tab5a = st.tabs(["Procentuální zhodnocení", "Průměrná nákupní cena", "Celkový zisk", "Nakoupené množství BTC", "Využití kapitálu"])
+
+            with tab1a:
+                st.header("Nejlepší strategie podle ROI (%)")
+                cols = st.columns(3)
+
+
+                top3 = df.sort_values("ROI", ascending=False).head(3)
+                bot3 = df.sort_values("ROI", ascending=True).head(3)
+
+                for rank, (_, result) in enumerate(top3.iterrows()):
+                      with cols[rank]:
+                            if rank == 0: st.subheader(f"🥇 {result['ROI']:.2f} %")
+                            if rank == 1: st.subheader(f"🥈 {result['ROI']:.2f} %")
+                            if rank == 2: st.subheader(f"🥉 {result['ROI']:.2f} %")
+
+                            result = result.to_dict()
+
+                            fills = {
+                                i: round(float(result[f"avg_fill_rate.{i}"]) * 100, 1)
+                                for i in range(len(limit_levels))
+                            }
+
+                            st.write(f"""
+                            Strategie č. {result['sequence']}  
+                            Váhy: {list(result['weights'])}  
+                            **Tržní nákup:** {list(result['market_set'])}
+                            """)
+
+                            st.write(f"- Průměrná cena: {result['avg_price_series'][-1]:.2f} USD")
+                            st.write(f"- Celkové BTC: {result['total_btc']:.8f}")
+                            st.write(f"- Celkově vložený kapitál: {result['total_cost']:.2f} USD")
+                            st.write(f"- Počet dnů: {result['days']}")
+                            st.write(f"- Celkový zisk: {result['total_profit']:.2f} USD")
+                            st.write(f"- ROI: {result['ROI']:.2f} %")
+                            st.write(f"- ROI p.a.: {result['ROI_pa']:.2f} %")
+                            st.write(f"- Využití kapitálu: {result['efficiency']:.2f} %")
+
+                            if result['uninvested_amount'] > 0:
+                                st.write(f"- Neinvestováno: {result['uninvested_amount']:.2f} USD")
+                            else:
+                                st.write(f"- Přebytečně investováno: {-result['uninvested_amount']:.2f} USD")
+
+                            st.write(f"- Celkem: {result['total_amount']:.2f} USD")
+                            st.write(f"- Naplnění limitních příkazů: {fills}")
+                            st.write(f"- Limit %: {result['percent_limit_invest']:.1f} %")
+                            st.write(f"- Market %: {result['percent_market_invest']:.1f} %")
+
+                st.header("Nejhorší strategie podle ROI (%)")
+                cols = st.columns(3)
+
+                for rank, (_, result) in enumerate(bot3.iterrows()):
+                      with cols[rank]:
+                            if rank == 0: st.subheader(f"🔻 {result['ROI']:.2f} %")
+                            if rank == 1: st.subheader(f"🔻 {result['ROI']:.2f} %")
+                            if rank == 2: st.subheader(f"🔻 {result['ROI']:.2f} %")
+
+                            result = result.to_dict()
+
+                            fills = {
+                                i: round(float(result[f"avg_fill_rate.{i}"]) * 100, 1)
+                                for i in range(len(limit_levels))
+                            }
+
+                            st.write(f"""
+                            Strategie č. {result['sequence']}  
+                            Váhy: {list(result['weights'])}  
+                            **Tržní nákup:** {list(result['market_set'])}
+                            """)
+
+                            st.write(f"- Průměrná cena: {result['avg_price_series'][-1]:.2f} USD")
+                            st.write(f"- Celkové BTC: {result['total_btc']:.8f}")
+                            st.write(f"- Celkově vložený kapitál: {result['total_cost']:.2f} USD")
+                            st.write(f"- Počet dnů: {result['days']}")
+                            st.write(f"- Celkový zisk: {result['total_profit']:.2f} USD")
+                            st.write(f"- ROI: {result['ROI']:.2f} %")
+                            st.write(f"- ROI p.a.: {result['ROI_pa']:.2f} %")
+                            st.write(f"- Využití kapitálu: {result['efficiency']:.2f} %")
+
+                            if result['uninvested_amount'] > 0:
+                                st.write(f"- Neinvestováno: {result['uninvested_amount']:.2f} USD")
+                            else:
+                                st.write(f"- Přebytečně investováno: {-result['uninvested_amount']:.2f} USD")
+
+                            st.write(f"- Celkem: {result['total_amount']:.2f} USD")
+                            st.write(f"- Naplnění limitních příkazů: {fills}")
+                            st.write(f"- Limit %: {result['percent_limit_invest']:.1f} %")
+                            st.write(f"- Market %: {result['percent_market_invest']:.1f} %")
+            
+            with tab2a:
+                st.header("Nejlepší strategie podle průměrné nákupní ceny")
+                cols = st.columns(3)
+                df["avg_price_final"] = df["total_cost"] / df["total_btc"]
+
+                top3 = df.sort_values("avg_price_final", ascending=True).head(3)
+                bot3 = df.sort_values("avg_price_final", ascending=False).head(3)
+
+                for rank, (_, result) in enumerate(top3.iterrows()):
+                     with cols[rank]:
+                            if rank == 0: st.subheader(f"🥇 {result['avg_price_final']:.0f} USD")
+                            if rank == 1: st.subheader(f"🥈 {result['avg_price_final']:.0f} USD")
+                            if rank == 2: st.subheader(f"🥉 {result['avg_price_final']:.0f} USD")
+                            result = result.to_dict()
+
+                            fills = {
+                                i: round(float(result[f"avg_fill_rate.{i}"]) * 100, 1)
+                                for i in range(len(limit_levels))
+                            }
+
+                            st.write(f"""
+                            Strategie č. {result['sequence']}  
+                            Váhy: {list(result['weights'])}  
+                            **Tržní nákup:** {list(result['market_set'])}
+                            """)
+
+                            st.write(f"- Průměrná cena: {result['avg_price_series'][-1]:.2f} USD")
+                            st.write(f"- Celkové BTC: {result['total_btc']:.8f}")
+                            st.write(f"- Celkově vložený kapitál: {result['total_cost']:.2f} USD")
+                            st.write(f"- Počet dnů: {result['days']}")
+                            st.write(f"- Celkový zisk: {result['total_profit']:.2f} USD")
+                            st.write(f"- ROI: {result['ROI']:.2f} %")
+                            st.write(f"- ROI p.a.: {result['ROI_pa']:.2f} %")
+                            st.write(f"- Využití kapitálu: {result['efficiency']:.2f} %")
+
+                            if result['uninvested_amount'] > 0:
+                                st.write(f"- Neinvestováno: {result['uninvested_amount']:.2f} USD")
+                            else:
+                                st.write(f"- Přebytečně investováno: {-result['uninvested_amount']:.2f} USD")
+
+                            st.write(f"- Celkem: {result['total_amount']:.2f} USD")
+                            st.write(f"- Naplnění limitních příkazů: {fills}")
+                            st.write(f"- Limit %: {result['percent_limit_invest']:.1f} %")
+                            st.write(f"- Market %: {result['percent_market_invest']:.1f} %")
+
+                st.header("Nejhorší strategie podle průměrné nákupní ceny")
+                cols = st.columns(3)
+
+                for rank, (_, result) in enumerate(bot3.iterrows()):
+                      with cols[rank]:
+                            if rank == 0: st.subheader(f"🔻 {result['avg_price_final']:.0f} USD")
+                            if rank == 1: st.subheader(f"🔻 {result['avg_price_final']:.0f} USD")
+                            if rank == 2: st.subheader(f"🔻 {result['avg_price_final']:.0f} USD")
+
+                            result = result.to_dict()
+
+                            fills = {
+                                i: round(float(result[f"avg_fill_rate.{i}"]) * 100, 1)
+                                for i in range(len(limit_levels))
+                            }
+
+                            st.write(f"""
+                            Strategie č. {result['sequence']}  
+                            Váhy: {list(result['weights'])}  
+                            **Tržní nákup:** {list(result['market_set'])}
+                            """)
+
+                            st.write(f"- Průměrná cena: {result['avg_price_series'][-1]:.2f} USD")
+                            st.write(f"- Celkové BTC: {result['total_btc']:.8f}")
+                            st.write(f"- Celkově vložený kapitál: {result['total_cost']:.2f} USD")
+                            st.write(f"- Počet dnů: {result['days']}")
+                            st.write(f"- Celkový zisk: {result['total_profit']:.2f} USD")
+                            st.write(f"- ROI: {result['ROI']:.2f} %")
+                            st.write(f"- ROI p.a.: {result['ROI_pa']:.2f} %")
+                            st.write(f"- Využití kapitálu: {result['efficiency']:.2f} %")
+
+                            if result['uninvested_amount'] > 0:
+                                st.write(f"- Neinvestováno: {result['uninvested_amount']:.2f} USD")
+                            else:
+                                st.write(f"- Přebytečně investováno: {-result['uninvested_amount']:.2f} USD")
+
+                            st.write(f"- Celkem: {result['total_amount']:.2f} USD")
+                            st.write(f"- Naplnění limitních příkazů: {fills}")
+                            st.write(f"- Limit %: {result['percent_limit_invest']:.1f} %")
+                            st.write(f"- Market %: {result['percent_market_invest']:.1f} %")
+
+            with tab3a:
+                cols = st.columns(3)
+
+
+                top3 = df.sort_values("total_profit", ascending=False).head(3)
+                bot3 = df.sort_values("total_profit", ascending=True).head(3)
+
+                for rank, (_, result) in enumerate(top3.iterrows()):
+                      with cols[rank]:
+                            if rank == 0: st.subheader(f"🥇 {result['total_profit']:.0f} USD")
+                            if rank == 1: st.subheader(f"🥈 {result['total_profit']:.0f} USD")
+                            if rank == 2: st.subheader(f"🥉 {result['total_profit']:.0f} USD")
+
+                            result = result.to_dict()
+
+                            fills = {
+                                i: round(float(result[f"avg_fill_rate.{i}"]) * 100, 1)
+                                for i in range(len(limit_levels))
+                            }
+
+                            st.write(f"""
+                            Strategie č. {result['sequence']}  
+                            Váhy: {list(result['weights'])}  
+                            **Tržní nákup:** {list(result['market_set'])}
+                            """)
+
+                            st.write(f"- Průměrná cena: {result['avg_price_series'][-1]:.2f} USD")
+                            st.write(f"- Celkové BTC: {result['total_btc']:.8f}")
+                            st.write(f"- Celkově vložený kapitál: {result['total_cost']:.2f} USD")
+                            st.write(f"- Počet dnů: {result['days']}")
+                            st.write(f"- Celkový zisk: {result['total_profit']:.2f} USD")
+                            st.write(f"- ROI: {result['ROI']:.2f} %")
+                            st.write(f"- ROI p.a.: {result['ROI_pa']:.2f} %")
+                            st.write(f"- Využití kapitálu: {result['efficiency']:.2f} %")
+
+                            if result['uninvested_amount'] > 0:
+                                st.write(f"- Neinvestováno: {result['uninvested_amount']:.2f} USD")
+                            else:
+                                st.write(f"- Přebytečně investováno: {-result['uninvested_amount']:.2f} USD")
+
+                            st.write(f"- Celkem: {result['total_amount']:.2f} USD")
+                            st.write(f"- Naplnění limitních příkazů: {fills}")
+                            st.write(f"- Limit %: {result['percent_limit_invest']:.1f} %")
+                            st.write(f"- Market %: {result['percent_market_invest']:.1f} %")
+
+                st.header("Nejhorší strategie podle celkového zisku")
+                cols = st.columns(3)
+
+                for rank, (_, result) in enumerate(bot3.iterrows()):
+                      with cols[rank]:
+                            if rank == 0: st.subheader(f"🔻 {result['total_profit']:.0f} USD")
+                            if rank == 1: st.subheader(f"🔻 {result['total_profit']:.0f} USD")
+                            if rank == 2: st.subheader(f"🔻 {result['total_profit']:.0f} USD")
+
+                            result = result.to_dict()
+
+                            fills = {
+                                i: round(float(result[f"avg_fill_rate.{i}"]) * 100, 1)
+                                for i in range(len(limit_levels))
+                            }
+
+                            st.write(f"""
+                            Strategie č. {result['sequence']}  
+                            Váhy: {list(result['weights'])}  
+                            **Tržní nákup:** {list(result['market_set'])}
+                            """)
+
+                            st.write(f"- Průměrná cena: {result['avg_price_series'][-1]:.2f} USD")
+                            st.write(f"- Celkové BTC: {result['total_btc']:.8f}")
+                            st.write(f"- Celkově vložený kapitál: {result['total_cost']:.2f} USD")
+                            st.write(f"- Počet dnů: {result['days']}")
+                            st.write(f"- Celkový zisk: {result['total_profit']:.2f} USD")
+                            st.write(f"- ROI: {result['ROI']:.2f} %")
+                            st.write(f"- ROI p.a.: {result['ROI_pa']:.2f} %")
+                            st.write(f"- Využití kapitálu: {result['efficiency']:.2f} %")
+
+                            if result['uninvested_amount'] > 0:
+                                st.write(f"- Neinvestováno: {result['uninvested_amount']:.2f} USD")
+                            else:
+                                st.write(f"- Přebytečně investováno: {-result['uninvested_amount']:.2f} USD")
+
+                            st.write(f"- Celkem: {result['total_amount']:.2f} USD")
+                            st.write(f"- Naplnění limitních příkazů: {fills}")
+                            st.write(f"- Limit %: {result['percent_limit_invest']:.1f} %")
+                            st.write(f"- Market %: {result['percent_market_invest']:.1f} %")
+            with tab4a:
+                cols = st.columns(3)
+
+
+                top3 = df.sort_values("total_btc", ascending=False).head(3)
+                bot3 = df.sort_values("total_btc", ascending=True).head(3)
+
+                for rank, (_, result) in enumerate(top3.iterrows()):
+                      with cols[rank]:
+                            if rank == 0: st.subheader(f"🥇 {result['total_btc']:.8f}")
+                            if rank == 1: st.subheader(f"🥈 {result['total_btc']:.8f}")
+                            if rank == 2: st.subheader(f"🥉 {result['total_btc']:.8f}")
+
+                            result = result.to_dict()
+
+                            fills = {
+                                i: round(float(result[f"avg_fill_rate.{i}"]) * 100, 1)
+                                for i in range(len(limit_levels))
+                            }
+
+                            st.write(f"""
+                            Strategie č. {result['sequence']}  
+                            Váhy: {list(result['weights'])}  
+                            **Tržní nákup:** {list(result['market_set'])}
+                            """)
+
+                            st.write(f"- Průměrná cena: {result['avg_price_series'][-1]:.2f} USD")
+                            st.write(f"- Celkové BTC: {result['total_btc']:.8f}")
+                            st.write(f"- Celkově vložený kapitál: {result['total_cost']:.2f} USD")
+                            st.write(f"- Počet dnů: {result['days']}")
+                            st.write(f"- Celkový zisk: {result['total_profit']:.2f} USD")
+                            st.write(f"- ROI: {result['ROI']:.2f} %")
+                            st.write(f"- ROI p.a.: {result['ROI_pa']:.2f} %")
+                            st.write(f"- Využití kapitálu: {result['efficiency']:.2f} %")
+
+                            if result['uninvested_amount'] > 0:
+                                st.write(f"- Neinvestováno: {result['uninvested_amount']:.2f} USD")
+                            else:
+                                st.write(f"- Přebytečně investováno: {-result['uninvested_amount']:.2f} USD")
+
+                            st.write(f"- Celkem: {result['total_amount']:.2f} USD")
+                            st.write(f"- Naplnění limitních příkazů: {fills}")
+                            st.write(f"- Limit %: {result['percent_limit_invest']:.1f} %")
+                            st.write(f"- Market %: {result['percent_market_invest']:.1f} %")
+
+                st.header("Nejhorší strategie podle nakoupeného množství BTC")
+                cols = st.columns(3)
+
+                for rank, (_, result) in enumerate(bot3.iterrows()):
+                      with cols[rank]:
+                            if rank == 0: st.subheader(f"🔻 {result['total_btc']:.8f}")
+                            if rank == 1: st.subheader(f"🔻 {result['total_btc']:.8f}")
+                            if rank == 2: st.subheader(f"🔻 {result['total_btc']:.8f}")
+
+                            result = result.to_dict()
+
+                            fills = {
+                                i: round(float(result[f"avg_fill_rate.{i}"]) * 100, 1)
+                                for i in range(len(limit_levels))
+                            }
+
+                            st.write(f"""
+                            Strategie č. {result['sequence']}  
+                            Váhy: {list(result['weights'])}  
+                            **Tržní nákup:** {list(result['market_set'])}
+                            """)
+
+                            st.write(f"- Průměrná cena: {result['avg_price_series'][-1]:.2f} USD")
+                            st.write(f"- Celkové BTC: {result['total_btc']:.8f}")
+                            st.write(f"- Celkově vložený kapitál: {result['total_cost']:.2f} USD")
+                            st.write(f"- Počet dnů: {result['days']}")
+                            st.write(f"- Celkový zisk: {result['total_profit']:.2f} USD")
+                            st.write(f"- ROI: {result['ROI']:.2f} %")
+                            st.write(f"- ROI p.a.: {result['ROI_pa']:.2f} %")
+                            st.write(f"- Využití kapitálu: {result['efficiency']:.2f} %")
+
+                            if result['uninvested_amount'] > 0:
+                                st.write(f"- Neinvestováno: {result['uninvested_amount']:.2f} USD")
+                            else:
+                                st.write(f"- Přebytečně investováno: {-result['uninvested_amount']:.2f} USD")
+
+                            st.write(f"- Celkem: {result['total_amount']:.2f} USD")
+                            st.write(f"- Naplnění limitních příkazů: {fills}")
+                            st.write(f"- Limit %: {result['percent_limit_invest']:.1f} %")
+                            st.write(f"- Market %: {result['percent_market_invest']:.1f} %")
+
+            with tab5a:
+                cols = st.columns(3)
+
+
+                top3 = df.sort_values("efficiency", ascending=False).head(3)
+                bot3 = df.sort_values("efficiency", ascending=True).head(3)
+
+                for rank, (_, result) in enumerate(top3.iterrows()):
+                      with cols[rank]:
+                            if rank == 0: st.subheader(f"🥇 {result['efficiency']:.2f} %")
+                            if rank == 1: st.subheader(f"🥈 {result['efficiency']:.2f} %")
+                            if rank == 2: st.subheader(f"🥉 {result['efficiency']:.2f} %")
+
+                            result = result.to_dict()
+
+                            fills = {
+                                i: round(float(result[f"avg_fill_rate.{i}"]) * 100, 1)
+                                for i in range(len(limit_levels))
+                            }
+
+                            st.write(f"""
+                            Strategie č. {result['sequence']}  
+                            Váhy: {list(result['weights'])}  
+                            **Tržní nákup:** {list(result['market_set'])}
+                            """)
+
+                            st.write(f"- Průměrná cena: {result['avg_price_series'][-1]:.2f} USD")
+                            st.write(f"- Celkové BTC: {result['total_btc']:.8f}")
+                            st.write(f"- Celkově vložený kapitál: {result['total_cost']:.2f} USD")
+                            st.write(f"- Počet dnů: {result['days']}")
+                            st.write(f"- Celkový zisk: {result['total_profit']:.2f} USD")
+                            st.write(f"- ROI: {result['ROI']:.2f} %")
+                            st.write(f"- ROI p.a.: {result['ROI_pa']:.2f} %")
+                            st.write(f"- Využití kapitálu: {result['efficiency']:.2f} %")
+
+                            if result['uninvested_amount'] > 0:
+                                st.write(f"- Neinvestováno: {result['uninvested_amount']:.2f} USD")
+                            else:
+                                st.write(f"- Přebytečně investováno: {-result['uninvested_amount']:.2f} USD")
+
+                            st.write(f"- Celkem: {result['total_amount']:.2f} USD")
+                            st.write(f"- Naplnění limitních příkazů: {fills}")
+                            st.write(f"- Limit %: {result['percent_limit_invest']:.1f} %")
+                            st.write(f"- Market %: {result['percent_market_invest']:.1f} %")
+
+                st.header("Nejhorší strategie podle využití kapitálu")
+                cols = st.columns(3)
+
+                for rank, (_, result) in enumerate(bot3.iterrows()):
+                      with cols[rank]:
+                            if rank == 0: st.subheader(f"🔻 {result['efficiency']:.2f} %")
+                            if rank == 1: st.subheader(f"🔻 {result['efficiency']:.2f} %")
+                            if rank == 2: st.subheader(f"🔻 {result['efficiency']:.2f} %")
+
+                            result = result.to_dict()
+
+                            fills = {
+                                i: round(float(result[f"avg_fill_rate.{i}"]) * 100, 1)
+                                for i in range(len(limit_levels))
+                            }
+
+                            st.write(f"""
+                            Strategie č. {result['sequence']}  
+                            Váhy: {list(result['weights'])}  
+                            **Tržní nákup:** {list(result['market_set'])}
+                            """)
+
+                            st.write(f"- Průměrná cena: {result['avg_price_series'][-1]:.2f} USD")
+                            st.write(f"- Celkové BTC: {result['total_btc']:.8f}")
+                            st.write(f"- Celkově vložený kapitál: {result['total_cost']:.2f} USD")
+                            st.write(f"- Počet dnů: {result['days']}")
+                            st.write(f"- Celkový zisk: {result['total_profit']:.2f} USD")
+                            st.write(f"- ROI: {result['ROI']:.2f} %")
+                            st.write(f"- ROI p.a.: {result['ROI_pa']:.2f} %")
+                            st.write(f"- Využití kapitálu: {result['efficiency']:.2f} %")
+
+                            if result['uninvested_amount'] > 0:
+                                st.write(f"- Neinvestováno: {result['uninvested_amount']:.2f} USD")
+                            else:
+                                st.write(f"- Přebytečně investováno: {-result['uninvested_amount']:.2f} USD")
+
+                            st.write(f"- Celkem: {result['total_amount']:.2f} USD")
+                            st.write(f"- Naplnění limitních příkazů: {fills}")
+                            st.write(f"- Limit %: {result['percent_limit_invest']:.1f} %")
+                            st.write(f"- Market %: {result['percent_market_invest']:.1f} %")
         else:
-            st.write(f"- Přebytečně investováno: {-results_2[0]['uninvested_amount']:.2f} USD")
-        st.write(f"- Celkem: {results_2[0]['total_amount']:.2f} USD")
-        st.write(f"- Naplňění limitných příkazů: {fills}")
-        st.write(f"- Limit %: {results_2[0]['percent_limit_invest']:.1f} %")
-        st.write(f"- Market %: {results_2[0]['percent_market_invest']:.1f} %")
-        st.write("---")
-else:
-    st.warning("Neplatné nastavení vah. Upravte váhy tak, aby jejich součet byl přesně roven 1.00.")    
+            st.write("Nenalezen žádný validní výsledek. Zkontrolujte součet vah a formát dat.")
+st.write("---")
 
 # --- BTFD statistika ---
 
