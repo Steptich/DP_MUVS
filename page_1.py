@@ -9,7 +9,7 @@ import numpy as np
 import time
 
 
-st.header("Dynamick8 DCA strategie")
+st.header("Dynamická DCA strategie")
 st.markdown("""
             **Dollar-Cost Averaging** je nejjednodušší a zároveň velmi efektivní metoda postupného nakupování, 
             při níž investor pravidelně investuje pevně stanovenou částku kapitálu do vybraného aktiva bez ohledu
