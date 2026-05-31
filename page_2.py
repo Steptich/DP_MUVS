@@ -8,7 +8,17 @@ import pandas as pd
 import numpy as np
 import time
 
-st.header("HANIČKA JE ŠIKULKA")
+st.header("Historický backtest")
+
+st.markdown("""
+            Tato kalkulačka umožňuje zpětně porovnávat výkon zvolených investičních strategií na základě historických tržních dat.
+            Pro spuštění backtestu je nezbytné zvolit časové období, výši pravidelné investice a nastavení multiplikátoru **&beta;** pro index **BTFD**, 
+            kterým bude pro každou objednávku zvýšena či snížena investovaná částka podle aktuální hodnoty násobitele **&beta;**.
+            Dale je možné nastavit transakční poplatky a limitní příkazy pro nákupy v korekci. Předpokládaná frekvence nákupu je 1x denně.
+
+            Vyhodnocení strategie se provádí na základě několika klíčových metrik, včetně návratnosti investice (ROI), 
+            průměrné nákupní ceny, aktuální hodnoty investice a množství nakoupeného BTC.
+            """, text_alignment="justify")
 
 start = time.time()
 
@@ -162,6 +172,15 @@ if 'btc_plot_key' not in st.session_state or st.session_state.btc_plot_key != pl
 
 st.plotly_chart(st.session_state.btc_fig, key="btc_plot")
 
+st.header("Nastavení dynamické strategie BTFD")
+
+st.markdown("""
+        Nastavte parametry pro výpočet multiplikátoru **&beta;**, který bude určovat výši investice pro každý nákup. 
+        Multiplikátor bude vypočítán na základě indexu **BTFD**, který měří, jak moc je aktuální cena pod svým historickým maximem.
+
+        Parametry můžete nastavit buď pomocí slideru, nebo zadáním konkrétní hodnoty do pole pro číslo. 
+        Obě možnosti jsou synchronizované, takže změna v jednom z nich se projeví i v druhém.""",text_alignment="justify")
+
 # --- Inicializace session_state ---
 if "btfdmin_slider" not in st.session_state:
     st.session_state.btfdmin_slider = 75  # default hodnota
@@ -179,10 +198,9 @@ def min_slider_changed():
 def min_number_changed():
     st.session_state.btfdmin_slider = st.session_state.btfdmin_number
 
-
 # --- Number input ---
 st.number_input(
-    "Insert min value",
+    "Maximální pokles uvažovaný pokles ceny pro výpočet multiplikátoru **&beta;** [%]:",
     min_value=10,
     max_value=90,
     step=1,
@@ -192,12 +210,13 @@ st.number_input(
 
 # --- Slider ---
 st.slider(
-    "Select min range value",
+    " ",
     min_value=10,
     max_value=90,
     step=1,
     key="btfdmin_slider",
-    on_change=min_slider_changed
+    on_change=min_slider_changed,
+    label_visibility="collapsed"
 )
 
 BTFD_MIN = - st.session_state.btfdmin_slider
@@ -222,7 +241,7 @@ def number_changed():
 
 # --- Number input ---
 st.number_input(
-    "Insert a number",
+    "Maximální hodnota multiplikátoru **&beta;**:",
     min_value=1.0,
     max_value=10.0,
     step=0.1,
@@ -233,13 +252,14 @@ st.number_input(
 
 # --- Slider ---
 st.slider(
-    "Select a range of values",
+    " ",
     min_value=1.0,
     max_value=10.0,
     step=0.1,
     format="%0.1f",
     key="btfdMULTI_slider",
-    on_change=slider_changed
+    on_change=slider_changed,
+    label_visibility="collapsed"
 )
 
 MAX_MULTIPLIER = st.session_state.btfdMULTI_slider
@@ -250,7 +270,7 @@ if "investment_number" not in st.session_state:
 
 # --- Number input fee_market ---
 st.number_input(
-    "Investment (USD)",
+    "Investovaná částka [USD]",
     min_value=10,
     max_value=10000,
     step=10,
@@ -288,6 +308,18 @@ btfd = st.session_state.btfd_with_multiplier
 
 multipliers = btfd['Multiplier'].to_numpy()
 
+st.header("Nastavení poplatků pro simulaci")
+
+st.markdown("""
+            Na každé kryptoburze nebo směnárně se platí transakční poplatky za spostředkování obchodu.
+            Pozice, které dodávají likviditu na trh (limitní příkazy) jsou zpravidla zvýhodněné oproti pozicím, 
+            které likviditu na trhu odebírají (tržní příkazy). Poplatky mohou hrát významnou roli v celkové výkonnosti 
+            investiční strategie, zejména u strategií s častými obchody, jako je DCA.
+
+            Zadejte poplatky pro limitní a tržní příkazy, které budou použity v simulaci. Poplatky můžete 
+            nastavit buď pomocí slideru, nebo zadáním konkrétní hodnoty do pole pro číslo. 
+            Obě možnosti jsou synchronizované.""",text_alignment="justify")
+
 
 # --- Inicializace session_state pro fee_limit ---
 if "fee_limit_slider" not in st.session_state:
@@ -309,7 +341,7 @@ def fee_limit_number_changed():
 
 # --- Number input fee_limit ---
 st.number_input(
-    "Fee Limit (%)",
+    "Poplatek za limitní příkaz [%]",
     min_value=0.0,
     max_value=1.0,
     step=0.01,
@@ -320,13 +352,14 @@ st.number_input(
 
 # --- Slider fee_limit ---
 st.slider(
-    "Select Fee Limit (%)",
+    " ",
     min_value=0.0,
     max_value=1.0,
     step=0.01,
     format="%0.2f",
     key="fee_limit_slider",
-    on_change=fee_limit_slider_changed
+    on_change=fee_limit_slider_changed,
+    label_visibility="collapsed"
 )
 
 FEE_LIMIT = st.session_state.fee_limit_slider / 100
@@ -351,7 +384,7 @@ def fee_market_number_changed():
 
 # --- Number input fee_market ---
 st.number_input(
-    "Fee Market (%)",
+    "Poplatek za tržní příkaz [%]",
     min_value=0.0,
     max_value=1.0,
     step=0.01,
@@ -362,17 +395,31 @@ st.number_input(
 
 # --- Slider fee_market ---
 st.slider(
-    "Select Fee Market (%)",
+    " ",
     min_value=0.0,
     max_value=1.0,
     step=0.01,
     format="%0.2f",
     key="fee_market_slider",
-    on_change=fee_market_slider_changed
+    on_change=fee_market_slider_changed,
+    label_visibility="collapsed"
 )
 
 FEE_MARKET = st.session_state.fee_market_slider / 100
 
+
+st.header("Nastavení váhových koeficientů pro jednotlivé úrovně limitních příkazů")
+
+st.markdown("""
+            V této části můžete nastavit váhové koeficienty pro jednotlivé úrovně limitních příkazů,
+            které budou použity v backtestu. Váhové koeficienty určují, jakou část investované částky 
+            bude představovat limitní příkaz pro danou úroveň poklesu ceny. Pro každou úroveň poklesu ceny 
+            můžete nastavit váhový koeficient v rozmezí od 0 do 1, přičemž součet všech váhových koeficientů musí být roven 1.
+
+            Pokud limitní příkaz na dané úrovni není v rámci dne naplněn, může být investovana částka nakoupena tržním příkazem. 
+            Pro každou úroveň limitního příkazu je třeba nastavit, zda se má použít tržní příkaz pro nákup zbylé částky v případě,
+            že limitní příkaz není plně realizován, nebo částka zůstane neinvestována.
+            """,text_alignment="justify")
 
 limit_levels = (0, 1, 2, 3, 4, 5)
 limit_multipliers = np.array([1 - lvl / 100 for lvl in limit_levels])
@@ -552,7 +599,7 @@ seq_number_max= 2  # počet sekvencí, pro které máme sliders/checkboxes
 def render_sequence(col, seq_number):
 
     with col:
-        st.subheader(f"Váhy pro jednotlivé levely - sekvence {seq_number}")
+        st.subheader(f"Strategie {seq_number}")
         weights = []
 
         # Získat minulé hodnoty, pokud jsou a pokud se změnilo téma
@@ -563,7 +610,7 @@ def render_sequence(col, seq_number):
             # Pokud máme předchozí hodnotu a změnilo se téma, použijeme ji
             slider_value = prev_weights[i]
             w = st.slider(
-                f"Level {lvl} %",
+                f"Pokles o {lvl} %",
                 min_value=0.0,
                 max_value=1.0,
                 step=0.05,
@@ -587,14 +634,14 @@ def render_sequence(col, seq_number):
         else:
             st.success(f"Součet vah: {total_weight:.2f}")
 
-        st.subheader("Market fallback (pokud limit není vyplněn)")
+        st.subheader("Nakoupit tržním příkazem (pokud limit není naplněn)")
         market_levels = []
         for i, lvl in enumerate(limit_levels):
             checkbox_key = f"checkbox_market{seq_number}_lvl{lvl}"
             # checkbox se zobrazuje jen pokud váha > 0
             if weights[i] > 0:
                 checked = st.checkbox(
-                    f"Market buy pro level {lvl}",
+                    f"Tržní příkaz pro limit {lvl} %",
                     key=checkbox_key
                 )
                 if checked:
@@ -613,6 +660,8 @@ col1a, col2a = st.columns(2)
 
 weights1, market_set1, results_1 = render_sequence(col1a, 1)
 weights2, market_set2, results_2 = render_sequence(col2a, 2)
+
+st.header("Výsledky a porovnání strategií")
 
 if results_1 and results_2:
     weights_key1 = "_".join(str(st.session_state[f"slider_weight1_lvl{lvl}"]) for lvl in limit_levels)
@@ -669,15 +718,15 @@ if results_1 and results_2:
                 y=df_btfd_plot_2["BTFD"],
                 mode='lines',
                 name='Strategie 2',
-                line=dict(color='green', width=1.5),  # zde nastavíš barvu
+                line=dict(color='red', width=1.5),  # zde nastavíš barvu
                 customdata=df_btfd_plot_2["Datetime"].dt.strftime('%d.%m.%Y'),
                 hovertemplate="<b>Strategie 2: BTFD:</b> %{y:.2f}%<br><b>Datum:</b> %{customdata}<extra></extra>"
             )
         )
 
-        btfd_fig.add_hline(y=BTFD_MIN, line_dash="dash", line_color="red", annotation_text=f"{BTFD_MIN} %",
+        btfd_fig.add_hline(y=BTFD_MIN, line_dash="dash", line_color="#F7931A", annotation_text=f"{BTFD_MIN} %",
                            annotation_position="bottom right")
-        btfd_fig.add_hline(y=0.0, line_dash="dash", line_color="red", annotation_text=f"0 %",
+        btfd_fig.add_hline(y=0.0, line_dash="dash", line_color="#F7931A", annotation_text=f"0 %",
                            annotation_position="top right")
 
         # formát osy X
@@ -819,7 +868,7 @@ if results_1 and results_2:
                 x=df_btfd_plot_1["Datetime"],
                 y=df_btfd_plot_1["Cumulative"],
                 mode="lines",
-                line=dict(color="green", width=1.5),
+                line=dict(color="blue", width=1.5),
                 name="Strategie 1",
                 customdata=btc_thinned['date_cz'],
                 hovertemplate="<b>Strategie 1: Celkově investováno (dynamická částka):</b> %{y:.2f} USD<br><b>Datum:</b> %{customdata}<extra></extra>"
@@ -1139,49 +1188,50 @@ if results_1 and results_2:
     col1b, col2b = st.columns(2)
 
     with col1b:
+        st.subheader("Strategie 1")
         fills = {k: round(float(v) * 100, 1) for k, v in results_1[0]['avg_fill_rate'].items()}
         st.write(f" Váhy: {list(results_1[0]['weights'])}, **Tržní nákup:** {list(results_1[0]['market_buy_for'])}")
-        st.write(f"- Průměrná cena: {results_1[0]['avg_price_series'][-1]:.2f} USD")
-        st.write(f"- Celkové BTC: {results_1[0]['total_btc']:.8f}")
+        st.write(f"- Průměrná nákupní cena: {results_1[0]['avg_price_series'][-1]:.2f} USD")
+        st.write(f"- Celkové množství BTC: {results_1[0]['total_btc']:.8f}")
         st.write(f"- Celkově vložený kapitál: {results_1[0]['total_cost']:.2f} USD")
-        st.write(f"- Počet dnů: {results_1[0]['days']}")
+        st.write(f"- Počet obchodních dnů: {results_1[0]['days']}")
         st.write(f"- Celkový zisk: {results_1[0]['total_profit']:.2f} USD")
-        st.write(f"- ROI: {results_1[0]['ROI']:.2f} %")
-        st.write(f"- ROI p.a.: {results_1[0]['ROI_pa']:.2f} %")
+        st.write(f"- Výnos (ROI): {results_1[0]['ROI']:.2f} %")
+        st.write(f"- Výnos (ROI) p.a.: {results_1[0]['ROI_pa']:.2f} %")
         st.write(f"- Využití kapitálu: {results_1[0]['efficiency']:.2f} %")
         if results_1[0]['uninvested_amount'] > 0:
             st.write(f"- Neinvestováno: {results_1[0]['uninvested_amount']:.2f} USD")
         else:
             st.write(f"- Přebytečně investováno: {-results_1[0]['uninvested_amount']:.2f} USD")
-        st.write(f"- Celkem: {results_1[0]['total_amount']:.2f} USD")
+        st.write(f"- Konečná hodnota investice: {results_1[0]['total_amount']:.2f} USD")
         st.write(f"- Naplňění limitných příkazů: {fills}")
-        st.write(f"- Limit %: {results_1[0]['percent_limit_invest']:.1f} %")
-        st.write(f"- Market %: {results_1[0]['percent_market_invest']:.1f} %")
-        st.write("---")
+        st.write(f"- Podíl limitních příkazů: {results_1[0]['percent_limit_invest']:.1f} %")
+        st.write(f"- Podíl tržních příkazů: {results_1[0]['percent_market_invest']:.1f} %")
 
     with col2b:
+        st.subheader("Strategie 2")
         fills = {k: round(float(v) * 100, 1) for k, v in results_2[0]['avg_fill_rate'].items()}
         st.write(f" Váhy: {list(results_2[0]['weights'])}, **Tržní nákup:** {list(results_2[0]['market_buy_for'])}")
         st.write(f"- Průměrná cena: {results_2[0]['avg_price_series'][-1]:.2f} USD")
-        st.write(f"- Celkové BTC: {results_2[0]['total_btc']:.8f}")
+        st.write(f"- Celkové množství BTC: {results_2[0]['total_btc']:.8f}")
         st.write(f"- Celkově vložený kapitál: {results_2[0]['total_cost']:.2f} USD")
-        st.write(f"- Počet dnů: {results_2[0]['days']}")
+        st.write(f"- Počet obchodních dnů: {results_2[0]['days']}")
         st.write(f"- Celkový zisk: {results_2[0]['total_profit']:.2f} USD")
-        st.write(f"- ROI: {results_2[0]['ROI']:.2f} %")
-        st.write(f"- ROI p.a.: {results_2[0]['ROI_pa']:.2f} %")
+        st.write(f"- Výnos (ROI): {results_2[0]['ROI']:.2f} %")
+        st.write(f"- Výnos (ROI) p.a.: {results_2[0]['ROI_pa']:.2f} %")
         st.write(f"- Využití kapitálu: {results_2[0]['efficiency']:.2f} %")
         if results_2[0]['uninvested_amount'] > 0:
             st.write(f"- Neinvestováno: {results_2[0]['uninvested_amount']:.2f} USD")
         else:
             st.write(f"- Přebytečně investováno: {-results_2[0]['uninvested_amount']:.2f} USD")
-        st.write(f"- Celkem: {results_2[0]['total_amount']:.2f} USD")
+        st.write(f"- Konečná hodnota investice: {results_2[0]['total_amount']:.2f} USD")
         st.write(f"- Naplňění limitných příkazů: {fills}")
-        st.write(f"- Limit %: {results_2[0]['percent_limit_invest']:.1f} %")
-        st.write(f"- Market %: {results_2[0]['percent_market_invest']:.1f} %")
-        st.write("---")
+        st.write(f"- Podíl limitních příkazů: {results_2[0]['percent_limit_invest']:.1f} %")
+        st.write(f"- Podíl tržních příkazů: {results_2[0]['percent_market_invest']:.1f} %")
+
 else:
     st.warning("Neplatné nastavení vah. Upravte váhy tak, aby jejich součet byl přesně roven 1.00.")    
-
+st.write("---")
 # --- BTFD statistika ---
 
 mean_btfd = btfd['BTFD'].mean()
@@ -1205,4 +1255,4 @@ median_monthly_invest = median_daily_invest * 30
 
 end = time.time()
 
-st.write(f"Total runtime of the program is {end - start} seconds")
+#st.write(f"Total runtime of the program is {end - start} seconds")
