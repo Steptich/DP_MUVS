@@ -547,640 +547,528 @@ def run_backtest(weights, market_set):
 
     return results
 
-seq_number_max= 2  # počet sekvencí, pro které máme sliders/checkboxes
-# --- Funkce pro vykreslení jedné sekvence ---
-def render_sequence(col, seq_number):
+uploaded_file = st.file_uploader("Nahraj CSV/XLSX s váhami", type=["csv", "xlsx"])
 
-    with col:
-        st.subheader(f"Váhy pro jednotlivé levely - sekvence {seq_number}")
-        weights = []
+all_results = []
 
-        # Získat minulé hodnoty, pokud jsou a pokud se změnilo téma
-        prev_weights = st.session_state.get(f"weights_seq{seq_number}", [0.0]*len(limit_levels))
+if uploaded_file:
 
-        for i, lvl in enumerate(limit_levels):
-            slider_key = f"slider_weight{seq_number}_lvl{lvl}"
-            # Pokud máme předchozí hodnotu a změnilo se téma, použijeme ji
-            slider_value = prev_weights[i]
-            w = st.slider(
-                f"Level {lvl} %",
-                min_value=0.0,
-                max_value=1.0,
-                step=0.05,
-                value=slider_value,
-                key=slider_key
-            )
-            weights.append(w)
+    df = pd.read_csv(uploaded_file) if uploaded_file.name.endswith("csv") else pd.read_excel(uploaded_file)
 
-        # Po vykreslení sliderů aktualizujeme session_state
-        st.session_state[f"weights_seq{seq_number}"] = tuple(weights)
+    required_cols = [f"lvl_{lvl}" for lvl in limit_levels]
+    
+    # nech jen relevantní sloupce, které existují
+    df = df[[c for c in required_cols if c in df.columns]]
 
-        total_weight = sum(weights)
+    row_cols = [c for c in required_cols if c in df.columns]
 
-        valid = True
-        if total_weight > 1:
-            st.error(f"Součet vah je {total_weight:.2f} (> 1)")
-            valid = False
-        elif total_weight < 1:
-            st.error(f"Součet vah je {total_weight:.2f} (< 1)")
-            valid = False
+    st.write("Načtené váhy:")
+    st.dataframe(df)
+
+    # chybějící sloupce
+    missing = set(required_cols) - set(df.columns)
+    if missing:
+        st.error(f"Chybí sloupce {sorted(missing)}")
+
+    else:      
+
+        for seq_number, row in df.iterrows():
+
+
+            weights = [row[col] for col in required_cols]
+
+            # kontrola NaN / None
+            if any(pd.isna(w) for w in weights):
+                st.error(f"Řádek {seq_number}: obsahuje chybějící váhy, řádek bude přeskočen")
+                continue
+
+            if any((w < 0 or w > 1) for w in weights):
+                st.error(f"Řádek {seq_number}: obsahuje váhy mimo rozsah 0–1, řádek bude přeskočen")
+                continue
+
+            # 1) načtení vah podle limit_levels
+            weights = [row[f"lvl_{lvl}"] for lvl in limit_levels]
+
+            total_weight = sum(weights)
+
+            if total_weight > 1 + 1e-9:
+                st.error(f"Řádek {seq_number}: součet vah je {total_weight:.4f} (> 1), řádek bude přeskočen")
+                continue
+            
+            if total_weight < 1 - 1e-9:
+                st.error(f"Řádek {seq_number}: součet vah je {total_weight:.4f} (< 1), řádek bude přeskočen")
+                continue
+
+            # 2) generování všech market kombinací
+            market_sets = tr.generate_market_sets(limit_levels,weights)
+
+            # 3) backtest přes všechny kombinace
+            seq_results = []
+
+            for market_set in market_sets:
+                result = run_backtest(weights, market_set)
+
+                seq_results.append({
+                    "market_set": sorted(list(market_set)),
+                    "result": result
+                })
+
+            all_results.append({
+                "sequence": seq_number + 1,
+                "weights": weights,
+                "results": seq_results
+            })
+
+        df = pd.json_normalize(
+            [
+                {
+                    "sequence": seq["sequence"],
+                    "weights": seq["weights"],
+                    "market_set": list(r["market_set"]),
+                    **r["result"][0]
+                }
+                for seq in all_results
+                for r in seq["results"]
+            ]
+        )
+
+
+        if not df.empty:
+
+            tab1a, tab2a, tab3a, tab4a, tab5a = st.tabs(["Procentuální zhodnocení", "Průměrná nákupní cena", "Celkový zisk", "Nakoupené množství BTC", "Využití kapitálu"])
+
+            with tab1a:
+                st.header("Nejlepší strategie podle ROI (%)")
+                cols = st.columns(3)
+
+
+                top3 = df.sort_values("ROI", ascending=False).head(3)
+                bot3 = df.sort_values("ROI", ascending=True).head(3)
+
+                for rank, (_, result) in enumerate(top3.iterrows()):
+                      with cols[rank]:
+                            if rank == 0: st.subheader(f"🥇 {result['ROI']:.2f} %")
+                            if rank == 1: st.subheader(f"🥈 {result['ROI']:.2f} %")
+                            if rank == 2: st.subheader(f"🥉 {result['ROI']:.2f} %")
+
+                            result = result.to_dict()
+
+                            fills = {
+                                i: round(float(result[f"avg_fill_rate.{i}"]) * 100, 1)
+                                for i in range(len(limit_levels))
+                            }
+
+                            st.write(f"""
+                            Strategie č. {result['sequence']}  
+                            Váhy: {list(result['weights'])}  
+                            **Tržní nákup:** {list(result['market_set'])}
+                            """)
+
+                            st.write(f"- Průměrná cena: {result['avg_price_series'][-1]:.2f} USD")
+                            st.write(f"- Celkové BTC: {result['total_btc']:.8f}")
+                            st.write(f"- Celkově vložený kapitál: {result['total_cost']:.2f} USD")
+                            st.write(f"- Počet dnů: {result['days']}")
+                            st.write(f"- Celkový zisk: {result['total_profit']:.2f} USD")
+                            st.write(f"- ROI: {result['ROI']:.2f} %")
+                            st.write(f"- ROI p.a.: {result['ROI_pa']:.2f} %")
+                            st.write(f"- Využití kapitálu: {result['efficiency']:.2f} %")
+
+                            if result['uninvested_amount'] > 0:
+                                st.write(f"- Neinvestováno: {result['uninvested_amount']:.2f} USD")
+                            else:
+                                st.write(f"- Přebytečně investováno: {-result['uninvested_amount']:.2f} USD")
+
+                            st.write(f"- Celkem: {result['total_amount']:.2f} USD")
+                            st.write(f"- Naplnění limitních příkazů: {fills}")
+                            st.write(f"- Limit %: {result['percent_limit_invest']:.1f} %")
+                            st.write(f"- Market %: {result['percent_market_invest']:.1f} %")
+
+                st.header("Nejhorší strategie podle ROI (%)")
+                cols = st.columns(3)
+
+                for rank, (_, result) in enumerate(bot3.iterrows()):
+                      with cols[rank]:
+                            if rank == 0: st.subheader(f"🔻 {result['ROI']:.2f} %")
+                            if rank == 1: st.subheader(f"🔻 {result['ROI']:.2f} %")
+                            if rank == 2: st.subheader(f"🔻 {result['ROI']:.2f} %")
+
+                            result = result.to_dict()
+
+                            fills = {
+                                i: round(float(result[f"avg_fill_rate.{i}"]) * 100, 1)
+                                for i in range(len(limit_levels))
+                            }
+
+                            st.write(f"""
+                            Strategie č. {result['sequence']}  
+                            Váhy: {list(result['weights'])}  
+                            **Tržní nákup:** {list(result['market_set'])}
+                            """)
+
+                            st.write(f"- Průměrná cena: {result['avg_price_series'][-1]:.2f} USD")
+                            st.write(f"- Celkové BTC: {result['total_btc']:.8f}")
+                            st.write(f"- Celkově vložený kapitál: {result['total_cost']:.2f} USD")
+                            st.write(f"- Počet dnů: {result['days']}")
+                            st.write(f"- Celkový zisk: {result['total_profit']:.2f} USD")
+                            st.write(f"- ROI: {result['ROI']:.2f} %")
+                            st.write(f"- ROI p.a.: {result['ROI_pa']:.2f} %")
+                            st.write(f"- Využití kapitálu: {result['efficiency']:.2f} %")
+
+                            if result['uninvested_amount'] > 0:
+                                st.write(f"- Neinvestováno: {result['uninvested_amount']:.2f} USD")
+                            else:
+                                st.write(f"- Přebytečně investováno: {-result['uninvested_amount']:.2f} USD")
+
+                            st.write(f"- Celkem: {result['total_amount']:.2f} USD")
+                            st.write(f"- Naplnění limitních příkazů: {fills}")
+                            st.write(f"- Limit %: {result['percent_limit_invest']:.1f} %")
+                            st.write(f"- Market %: {result['percent_market_invest']:.1f} %")
+            
+            with tab2a:
+                st.header("Nejlepší strategie podle průměrné nákupní ceny")
+                cols = st.columns(3)
+                df["avg_price_final"] = df["total_cost"] / df["total_btc"]
+
+                top3 = df.sort_values("avg_price_final", ascending=True).head(3)
+                bot3 = df.sort_values("avg_price_final", ascending=False).head(3)
+
+                for rank, (_, result) in enumerate(top3.iterrows()):
+                     with cols[rank]:
+                            if rank == 0: st.subheader(f"🥇 {result['avg_price_final']:.0f} USD")
+                            if rank == 1: st.subheader(f"🥈 {result['avg_price_final']:.0f} USD")
+                            if rank == 2: st.subheader(f"🥉 {result['avg_price_final']:.0f} USD")
+                            result = result.to_dict()
+
+                            fills = {
+                                i: round(float(result[f"avg_fill_rate.{i}"]) * 100, 1)
+                                for i in range(len(limit_levels))
+                            }
+
+                            st.write(f"""
+                            Strategie č. {result['sequence']}  
+                            Váhy: {list(result['weights'])}  
+                            **Tržní nákup:** {list(result['market_set'])}
+                            """)
+
+                            st.write(f"- Průměrná cena: {result['avg_price_series'][-1]:.2f} USD")
+                            st.write(f"- Celkové BTC: {result['total_btc']:.8f}")
+                            st.write(f"- Celkově vložený kapitál: {result['total_cost']:.2f} USD")
+                            st.write(f"- Počet dnů: {result['days']}")
+                            st.write(f"- Celkový zisk: {result['total_profit']:.2f} USD")
+                            st.write(f"- ROI: {result['ROI']:.2f} %")
+                            st.write(f"- ROI p.a.: {result['ROI_pa']:.2f} %")
+                            st.write(f"- Využití kapitálu: {result['efficiency']:.2f} %")
+
+                            if result['uninvested_amount'] > 0:
+                                st.write(f"- Neinvestováno: {result['uninvested_amount']:.2f} USD")
+                            else:
+                                st.write(f"- Přebytečně investováno: {-result['uninvested_amount']:.2f} USD")
+
+                            st.write(f"- Celkem: {result['total_amount']:.2f} USD")
+                            st.write(f"- Naplnění limitních příkazů: {fills}")
+                            st.write(f"- Limit %: {result['percent_limit_invest']:.1f} %")
+                            st.write(f"- Market %: {result['percent_market_invest']:.1f} %")
+
+                st.header("Nejhorší strategie podle průměrné nákupní ceny")
+                cols = st.columns(3)
+
+                for rank, (_, result) in enumerate(bot3.iterrows()):
+                      with cols[rank]:
+                            if rank == 0: st.subheader(f"🔻 {result['avg_price_final']:.0f} USD")
+                            if rank == 1: st.subheader(f"🔻 {result['avg_price_final']:.0f} USD")
+                            if rank == 2: st.subheader(f"🔻 {result['avg_price_final']:.0f} USD")
+
+                            result = result.to_dict()
+
+                            fills = {
+                                i: round(float(result[f"avg_fill_rate.{i}"]) * 100, 1)
+                                for i in range(len(limit_levels))
+                            }
+
+                            st.write(f"""
+                            Strategie č. {result['sequence']}  
+                            Váhy: {list(result['weights'])}  
+                            **Tržní nákup:** {list(result['market_set'])}
+                            """)
+
+                            st.write(f"- Průměrná cena: {result['avg_price_series'][-1]:.2f} USD")
+                            st.write(f"- Celkové BTC: {result['total_btc']:.8f}")
+                            st.write(f"- Celkově vložený kapitál: {result['total_cost']:.2f} USD")
+                            st.write(f"- Počet dnů: {result['days']}")
+                            st.write(f"- Celkový zisk: {result['total_profit']:.2f} USD")
+                            st.write(f"- ROI: {result['ROI']:.2f} %")
+                            st.write(f"- ROI p.a.: {result['ROI_pa']:.2f} %")
+                            st.write(f"- Využití kapitálu: {result['efficiency']:.2f} %")
+
+                            if result['uninvested_amount'] > 0:
+                                st.write(f"- Neinvestováno: {result['uninvested_amount']:.2f} USD")
+                            else:
+                                st.write(f"- Přebytečně investováno: {-result['uninvested_amount']:.2f} USD")
+
+                            st.write(f"- Celkem: {result['total_amount']:.2f} USD")
+                            st.write(f"- Naplnění limitních příkazů: {fills}")
+                            st.write(f"- Limit %: {result['percent_limit_invest']:.1f} %")
+                            st.write(f"- Market %: {result['percent_market_invest']:.1f} %")
+
+            with tab3a:
+                cols = st.columns(3)
+
+
+                top3 = df.sort_values("total_profit", ascending=False).head(3)
+                bot3 = df.sort_values("total_profit", ascending=True).head(3)
+
+                for rank, (_, result) in enumerate(top3.iterrows()):
+                      with cols[rank]:
+                            if rank == 0: st.subheader(f"🥇 {result['total_profit']:.0f} USD")
+                            if rank == 1: st.subheader(f"🥈 {result['total_profit']:.0f} USD")
+                            if rank == 2: st.subheader(f"🥉 {result['total_profit']:.0f} USD")
+
+                            result = result.to_dict()
+
+                            fills = {
+                                i: round(float(result[f"avg_fill_rate.{i}"]) * 100, 1)
+                                for i in range(len(limit_levels))
+                            }
+
+                            st.write(f"""
+                            Strategie č. {result['sequence']}  
+                            Váhy: {list(result['weights'])}  
+                            **Tržní nákup:** {list(result['market_set'])}
+                            """)
+
+                            st.write(f"- Průměrná cena: {result['avg_price_series'][-1]:.2f} USD")
+                            st.write(f"- Celkové BTC: {result['total_btc']:.8f}")
+                            st.write(f"- Celkově vložený kapitál: {result['total_cost']:.2f} USD")
+                            st.write(f"- Počet dnů: {result['days']}")
+                            st.write(f"- Celkový zisk: {result['total_profit']:.2f} USD")
+                            st.write(f"- ROI: {result['ROI']:.2f} %")
+                            st.write(f"- ROI p.a.: {result['ROI_pa']:.2f} %")
+                            st.write(f"- Využití kapitálu: {result['efficiency']:.2f} %")
+
+                            if result['uninvested_amount'] > 0:
+                                st.write(f"- Neinvestováno: {result['uninvested_amount']:.2f} USD")
+                            else:
+                                st.write(f"- Přebytečně investováno: {-result['uninvested_amount']:.2f} USD")
+
+                            st.write(f"- Celkem: {result['total_amount']:.2f} USD")
+                            st.write(f"- Naplnění limitních příkazů: {fills}")
+                            st.write(f"- Limit %: {result['percent_limit_invest']:.1f} %")
+                            st.write(f"- Market %: {result['percent_market_invest']:.1f} %")
+
+                st.header("Nejhorší strategie podle celkového zisku")
+                cols = st.columns(3)
+
+                for rank, (_, result) in enumerate(bot3.iterrows()):
+                      with cols[rank]:
+                            if rank == 0: st.subheader(f"🔻 {result['total_profit']:.0f} USD")
+                            if rank == 1: st.subheader(f"🔻 {result['total_profit']:.0f} USD")
+                            if rank == 2: st.subheader(f"🔻 {result['total_profit']:.0f} USD")
+
+                            result = result.to_dict()
+
+                            fills = {
+                                i: round(float(result[f"avg_fill_rate.{i}"]) * 100, 1)
+                                for i in range(len(limit_levels))
+                            }
+
+                            st.write(f"""
+                            Strategie č. {result['sequence']}  
+                            Váhy: {list(result['weights'])}  
+                            **Tržní nákup:** {list(result['market_set'])}
+                            """)
+
+                            st.write(f"- Průměrná cena: {result['avg_price_series'][-1]:.2f} USD")
+                            st.write(f"- Celkové BTC: {result['total_btc']:.8f}")
+                            st.write(f"- Celkově vložený kapitál: {result['total_cost']:.2f} USD")
+                            st.write(f"- Počet dnů: {result['days']}")
+                            st.write(f"- Celkový zisk: {result['total_profit']:.2f} USD")
+                            st.write(f"- ROI: {result['ROI']:.2f} %")
+                            st.write(f"- ROI p.a.: {result['ROI_pa']:.2f} %")
+                            st.write(f"- Využití kapitálu: {result['efficiency']:.2f} %")
+
+                            if result['uninvested_amount'] > 0:
+                                st.write(f"- Neinvestováno: {result['uninvested_amount']:.2f} USD")
+                            else:
+                                st.write(f"- Přebytečně investováno: {-result['uninvested_amount']:.2f} USD")
+
+                            st.write(f"- Celkem: {result['total_amount']:.2f} USD")
+                            st.write(f"- Naplnění limitních příkazů: {fills}")
+                            st.write(f"- Limit %: {result['percent_limit_invest']:.1f} %")
+                            st.write(f"- Market %: {result['percent_market_invest']:.1f} %")
+            with tab4a:
+                cols = st.columns(3)
+
+
+                top3 = df.sort_values("total_btc", ascending=False).head(3)
+                bot3 = df.sort_values("total_btc", ascending=True).head(3)
+
+                for rank, (_, result) in enumerate(top3.iterrows()):
+                      with cols[rank]:
+                            if rank == 0: st.subheader(f"🥇 {result['total_btc']:.8f}")
+                            if rank == 1: st.subheader(f"🥈 {result['total_btc']:.8f}")
+                            if rank == 2: st.subheader(f"🥉 {result['total_btc']:.8f}")
+
+                            result = result.to_dict()
+
+                            fills = {
+                                i: round(float(result[f"avg_fill_rate.{i}"]) * 100, 1)
+                                for i in range(len(limit_levels))
+                            }
+
+                            st.write(f"""
+                            Strategie č. {result['sequence']}  
+                            Váhy: {list(result['weights'])}  
+                            **Tržní nákup:** {list(result['market_set'])}
+                            """)
+
+                            st.write(f"- Průměrná cena: {result['avg_price_series'][-1]:.2f} USD")
+                            st.write(f"- Celkové BTC: {result['total_btc']:.8f}")
+                            st.write(f"- Celkově vložený kapitál: {result['total_cost']:.2f} USD")
+                            st.write(f"- Počet dnů: {result['days']}")
+                            st.write(f"- Celkový zisk: {result['total_profit']:.2f} USD")
+                            st.write(f"- ROI: {result['ROI']:.2f} %")
+                            st.write(f"- ROI p.a.: {result['ROI_pa']:.2f} %")
+                            st.write(f"- Využití kapitálu: {result['efficiency']:.2f} %")
+
+                            if result['uninvested_amount'] > 0:
+                                st.write(f"- Neinvestováno: {result['uninvested_amount']:.2f} USD")
+                            else:
+                                st.write(f"- Přebytečně investováno: {-result['uninvested_amount']:.2f} USD")
+
+                            st.write(f"- Celkem: {result['total_amount']:.2f} USD")
+                            st.write(f"- Naplnění limitních příkazů: {fills}")
+                            st.write(f"- Limit %: {result['percent_limit_invest']:.1f} %")
+                            st.write(f"- Market %: {result['percent_market_invest']:.1f} %")
+
+                st.header("Nejhorší strategie podle nakoupeného množství BTC")
+                cols = st.columns(3)
+
+                for rank, (_, result) in enumerate(bot3.iterrows()):
+                      with cols[rank]:
+                            if rank == 0: st.subheader(f"🔻 {result['total_btc']:.8f}")
+                            if rank == 1: st.subheader(f"🔻 {result['total_btc']:.8f}")
+                            if rank == 2: st.subheader(f"🔻 {result['total_btc']:.8f}")
+
+                            result = result.to_dict()
+
+                            fills = {
+                                i: round(float(result[f"avg_fill_rate.{i}"]) * 100, 1)
+                                for i in range(len(limit_levels))
+                            }
+
+                            st.write(f"""
+                            Strategie č. {result['sequence']}  
+                            Váhy: {list(result['weights'])}  
+                            **Tržní nákup:** {list(result['market_set'])}
+                            """)
+
+                            st.write(f"- Průměrná cena: {result['avg_price_series'][-1]:.2f} USD")
+                            st.write(f"- Celkové BTC: {result['total_btc']:.8f}")
+                            st.write(f"- Celkově vložený kapitál: {result['total_cost']:.2f} USD")
+                            st.write(f"- Počet dnů: {result['days']}")
+                            st.write(f"- Celkový zisk: {result['total_profit']:.2f} USD")
+                            st.write(f"- ROI: {result['ROI']:.2f} %")
+                            st.write(f"- ROI p.a.: {result['ROI_pa']:.2f} %")
+                            st.write(f"- Využití kapitálu: {result['efficiency']:.2f} %")
+
+                            if result['uninvested_amount'] > 0:
+                                st.write(f"- Neinvestováno: {result['uninvested_amount']:.2f} USD")
+                            else:
+                                st.write(f"- Přebytečně investováno: {-result['uninvested_amount']:.2f} USD")
+
+                            st.write(f"- Celkem: {result['total_amount']:.2f} USD")
+                            st.write(f"- Naplnění limitních příkazů: {fills}")
+                            st.write(f"- Limit %: {result['percent_limit_invest']:.1f} %")
+                            st.write(f"- Market %: {result['percent_market_invest']:.1f} %")
+
+            with tab5a:
+                cols = st.columns(3)
+
+
+                top3 = df.sort_values("efficiency", ascending=False).head(3)
+                bot3 = df.sort_values("efficiency", ascending=True).head(3)
+
+                for rank, (_, result) in enumerate(top3.iterrows()):
+                      with cols[rank]:
+                            if rank == 0: st.subheader(f"🥇 {result['efficiency']:.2f} %")
+                            if rank == 1: st.subheader(f"🥈 {result['efficiency']:.2f} %")
+                            if rank == 2: st.subheader(f"🥉 {result['efficiency']:.2f} %")
+
+                            result = result.to_dict()
+
+                            fills = {
+                                i: round(float(result[f"avg_fill_rate.{i}"]) * 100, 1)
+                                for i in range(len(limit_levels))
+                            }
+
+                            st.write(f"""
+                            Strategie č. {result['sequence']}  
+                            Váhy: {list(result['weights'])}  
+                            **Tržní nákup:** {list(result['market_set'])}
+                            """)
+
+                            st.write(f"- Průměrná cena: {result['avg_price_series'][-1]:.2f} USD")
+                            st.write(f"- Celkové BTC: {result['total_btc']:.8f}")
+                            st.write(f"- Celkově vložený kapitál: {result['total_cost']:.2f} USD")
+                            st.write(f"- Počet dnů: {result['days']}")
+                            st.write(f"- Celkový zisk: {result['total_profit']:.2f} USD")
+                            st.write(f"- ROI: {result['ROI']:.2f} %")
+                            st.write(f"- ROI p.a.: {result['ROI_pa']:.2f} %")
+                            st.write(f"- Využití kapitálu: {result['efficiency']:.2f} %")
+
+                            if result['uninvested_amount'] > 0:
+                                st.write(f"- Neinvestováno: {result['uninvested_amount']:.2f} USD")
+                            else:
+                                st.write(f"- Přebytečně investováno: {-result['uninvested_amount']:.2f} USD")
+
+                            st.write(f"- Celkem: {result['total_amount']:.2f} USD")
+                            st.write(f"- Naplnění limitních příkazů: {fills}")
+                            st.write(f"- Limit %: {result['percent_limit_invest']:.1f} %")
+                            st.write(f"- Market %: {result['percent_market_invest']:.1f} %")
+
+                st.header("Nejhorší strategie podle využití kapitálu")
+                cols = st.columns(3)
+
+                for rank, (_, result) in enumerate(bot3.iterrows()):
+                      with cols[rank]:
+                            if rank == 0: st.subheader(f"🔻 {result['efficiency']:.2f} %")
+                            if rank == 1: st.subheader(f"🔻 {result['efficiency']:.2f} %")
+                            if rank == 2: st.subheader(f"🔻 {result['efficiency']:.2f} %")
+
+                            result = result.to_dict()
+
+                            fills = {
+                                i: round(float(result[f"avg_fill_rate.{i}"]) * 100, 1)
+                                for i in range(len(limit_levels))
+                            }
+
+                            st.write(f"""
+                            Strategie č. {result['sequence']}  
+                            Váhy: {list(result['weights'])}  
+                            **Tržní nákup:** {list(result['market_set'])}
+                            """)
+
+                            st.write(f"- Průměrná cena: {result['avg_price_series'][-1]:.2f} USD")
+                            st.write(f"- Celkové BTC: {result['total_btc']:.8f}")
+                            st.write(f"- Celkově vložený kapitál: {result['total_cost']:.2f} USD")
+                            st.write(f"- Počet dnů: {result['days']}")
+                            st.write(f"- Celkový zisk: {result['total_profit']:.2f} USD")
+                            st.write(f"- ROI: {result['ROI']:.2f} %")
+                            st.write(f"- ROI p.a.: {result['ROI_pa']:.2f} %")
+                            st.write(f"- Využití kapitálu: {result['efficiency']:.2f} %")
+
+                            if result['uninvested_amount'] > 0:
+                                st.write(f"- Neinvestováno: {result['uninvested_amount']:.2f} USD")
+                            else:
+                                st.write(f"- Přebytečně investováno: {-result['uninvested_amount']:.2f} USD")
+
+                            st.write(f"- Celkem: {result['total_amount']:.2f} USD")
+                            st.write(f"- Naplnění limitních příkazů: {fills}")
+                            st.write(f"- Limit %: {result['percent_limit_invest']:.1f} %")
+                            st.write(f"- Market %: {result['percent_market_invest']:.1f} %")
         else:
-            st.success(f"Součet vah: {total_weight:.2f}")
-
-        st.subheader("Market fallback (pokud limit není vyplněn)")
-        market_levels = []
-        for i, lvl in enumerate(limit_levels):
-            checkbox_key = f"checkbox_market{seq_number}_lvl{lvl}"
-            # checkbox se zobrazuje jen pokud váha > 0
-            if weights[i] > 0:
-                checked = st.checkbox(
-                    f"Market buy pro level {lvl}",
-                    key=checkbox_key
-                )
-                if checked:
-                    market_levels.append(lvl)
-            else:
-                # váha = 0 → checkbox je automaticky False
-                st.session_state[checkbox_key] = False
-
-        market_set = frozenset(market_levels)
-
-        results = run_backtest(weights, market_set) if valid else None
-        return weights, market_set, results
-
-# Rozdělení do dvou sloupců
-col1a, col2a = st.columns(2)
-
-weights1, market_set1, results_1 = render_sequence(col1a, 1)
-weights2, market_set2, results_2 = render_sequence(col2a, 2)
-
-if results_1 and results_2:
-    weights_key1 = "_".join(str(st.session_state[f"slider_weight1_lvl{lvl}"]) for lvl in limit_levels)
-    weights_key2 = "_".join(str(st.session_state[f"slider_weight2_lvl{lvl}"]) for lvl in limit_levels)
-    market_key1 = "_".join(str(int(st.session_state[f"checkbox_market1_lvl{lvl}"])) for lvl in limit_levels)
-    market_key2 = "_".join(str(int(st.session_state[f"checkbox_market2_lvl{lvl}"])) for lvl in limit_levels)
-
-    tab1a, tab2a, tab3a, tab4a = st.tabs(["BTFD", "Multiplikátor", "Nákupní částka", "Investovaná částka"])
-
-    plot_key1 = (
-        f"{st.session_state.start_date}_{st.session_state.end_date}_"
-        f"{st.session_state.btfdmin_slider}_{st.session_state.btfdMULTI_slider}"
-        f"{st.session_state.investment_number}_"
-        f"{st.session_state.fee_market_slider}_{st.session_state.fee_limit_slider}_"
-        f"{weights_key1}_{market_key1}_{weights_key2}_{market_key2}"
-
-    )
-    # tooltip
-    if 'btfd_plot_key' not in st.session_state or st.session_state.btfd_plot_key != plot_key1:
-
-        df_btfd_plot_1 = pd.DataFrame({
-            "Datetime": results_1[0]["buy_date_series"],
-            "BTFD": results_1[0]["btfd_value_series"],
-            "Multiplier": results_1[0]["btfd_multiplier_series"]
-        })
-
-        df_btfd_plot_1["Cumulative"] = (results_1[0]["total_cost_series"])
-
-        df_btfd_plot_2 = pd.DataFrame({
-            "Datetime": results_2[0]["buy_date_series"],
-            "BTFD": results_2[0]["btfd_value_series"],
-            "Multiplier": results_2[0]["btfd_multiplier_series"]
-        })
-
-        df_btfd_plot_2["Cumulative"] = (results_2[0]["total_cost_series"])
-        
-        btfd_fig = go.Figure()
-
-        btfd_fig.add_trace(
-            go.Scatter(
-                x=df_btfd_plot_1["Datetime"],
-                y=df_btfd_plot_1["BTFD"],
-                mode='lines',
-                name='Strategie 1',
-                line=dict(color='blue', width=1.5),
-                customdata=df_btfd_plot_1["Datetime"].dt.strftime('%d.%m.%Y'),
-                hovertemplate="<b>Strategie 1: BTFD:</b> %{y:.2f}%<br><b>Datum:</b> %{customdata}<extra></extra>"
-            )
-        )
-
-        btfd_fig.add_trace(
-            go.Scatter(
-                x=df_btfd_plot_2["Datetime"],
-                y=df_btfd_plot_2["BTFD"],
-                mode='lines',
-                name='Strategie 2',
-                line=dict(color='green', width=1.5),  # zde nastavíš barvu
-                customdata=df_btfd_plot_2["Datetime"].dt.strftime('%d.%m.%Y'),
-                hovertemplate="<b>Strategie 2: BTFD:</b> %{y:.2f}%<br><b>Datum:</b> %{customdata}<extra></extra>"
-            )
-        )
-
-        btfd_fig.add_hline(y=BTFD_MIN, line_dash="dash", line_color="red", annotation_text=f"{BTFD_MIN} %",
-                           annotation_position="bottom right")
-        btfd_fig.add_hline(y=0.0, line_dash="dash", line_color="red", annotation_text=f"0 %",
-                           annotation_position="top right")
-
-        # formát osy X
-        btfd_fig.update_xaxes(
-            tickformat="%d.%m.%Y",  # formát osy
-            showgrid=True,  # zapnutí vertikálních grid line
-            gridwidth=1,  # tloušťka gridu
-            tickangle=-45,  # naklonění tick labelů
-            range=[
-                df_btfd_plot_1["Datetime"].min(),
-                df_btfd_plot_1["Datetime"].max() + dt.timedelta(days=2)
-            ]
-        )
-
-        btfd_fig.update_layout(
-            xaxis_title="Čas",
-            yaxis_title="Hodnota indexu BTFD [%]",
-            hovermode="x unified",
-            legend=dict(
-                x=0.01,
-                y=0.01,
-                xanchor="left",
-                yanchor="bottom",
-            )
-        )
-
-        multiplier_fig = go.Figure()
-
-        multiplier_fig.add_trace(
-            go.Scatter(
-                x=df_btfd_plot_1["Datetime"],
-                y=df_btfd_plot_1["Multiplier"],
-                mode='lines',
-                name='Strategie 1',
-                line=dict(color='blue', width=1.5),
-                customdata=df_btfd_plot_1["Datetime"].dt.strftime('%d.%m.%Y'),
-                hovertemplate="<b>Strategie 1: Hodnota multiplikátoru:</b> %{y:.2f}x<br><b>Datum:</b> %{customdata}<extra></extra>"
-            )
-        )
-
-        multiplier_fig.add_trace(
-            go.Scatter(
-                x=df_btfd_plot_2["Datetime"],
-                y=df_btfd_plot_2["Multiplier"],
-                mode='lines',
-                name='Strategie 2',
-                line=dict(color='red', width=1.5),  # zde nastavíš barvu
-                customdata=df_btfd_plot_2["Datetime"].dt.strftime('%d.%m.%Y'),
-                hovertemplate="<b>Strategie 2: Hodnota multiplikátoru:</b> %{y:.2f}x<br><b>Datum:</b> %{customdata}<extra></extra>"
-            )
-        )
-
-        multiplier_fig.add_hline(y=MAX_MULTIPLIER, line_dash="dash", line_color="green",
-                                 annotation_text=f"Max: {MAX_MULTIPLIER}x", annotation_position="top right")
-        multiplier_fig.add_hline(y=1.0, line_dash="dash", line_color="green", annotation_text=f"Min: 1.0x",
-                                 annotation_position="bottom right")
-
-        # formát osy X
-        multiplier_fig.update_xaxes(
-            tickformat="%d.%m.%Y",  # formát osy
-            showgrid=True,  # zapnutí vertikálních grid line
-            gridwidth=1,  # tloušťka gridu
-            tickangle=-45,  # naklonění tick labelů
-            range=[
-                df_btfd_plot_1["Datetime"].min(),
-                df_btfd_plot_1["Datetime"].max() + dt.timedelta(days=2)
-            ]
-        )
-
-        multiplier_fig.update_layout(
-            xaxis_title="Čas",
-            yaxis_title="Hodnota multiplikátoru",
-            hovermode="x unified",
-            legend=dict(
-                x=0.01,
-                y=0.01,
-                xanchor="left",
-                yanchor="bottom",
-            )
-        )
-
-        buy_fig = go.Figure()
-
-        buy_fig.add_trace(
-            go.Scatter(
-                x=df_btfd_plot_1["Datetime"],
-                y=df_btfd_plot_1["Multiplier"] * INVEST_PER_DAY,
-                mode='lines',
-                name='Strategie 1',
-                line=dict(color='blue', width=1.5),
-                customdata=df_btfd_plot_1["Datetime"].dt.strftime('%d.%m.%Y'),
-                hovertemplate="<b>Strategie 1: Nákupní částka:</b> %{y:.2f} USD<br><b>Datum:</b> %{customdata}<extra></extra>"
-            )
-        )
-
-        buy_fig.add_trace(
-            go.Scatter(
-                x=df_btfd_plot_2["Datetime"],
-                y=df_btfd_plot_2["Multiplier"] * INVEST_PER_DAY,
-                mode='lines',
-                name='Strategie 2',
-                line=dict(color='red', width=1.5),  # zde nastavíš barvu
-                customdata=df_btfd_plot_2["Datetime"].dt.strftime('%d.%m.%Y'),
-                hovertemplate="<b>Strategie 2: Nákupní částka:</b> %{y:.2f} USD<br><b>Datum:</b> %{customdata}<extra></extra>"
-            )
-        )
-
-        buy_fig.add_hline(y=INVEST_PER_DAY, line_dash="dash", line_color="#F7931A",
-                          annotation_text=f"Fixní investice: {INVEST_PER_DAY} USD", annotation_position="bottom right")
-
-        buy_fig.update_xaxes(
-            tickformat="%d.%m.%Y",  # formát osy
-            showgrid=True,  # zapnutí vertikálních grid line
-            gridwidth=1,  # tloušťka gridu
-            tickangle=-45,  # naklonění tick labelů
-            range=[
-                btc_thinned["Datetime"].min(),
-                btc_thinned["Datetime"].max() + dt.timedelta(days=2)
-            ]
-        )
-
-        buy_fig.update_layout(
-            xaxis_title="Čas",
-            yaxis_title="Nákupní částka [USD]",
-            hovermode="x unified",
-            legend=dict(
-                x=0.01,
-                y=0.99,
-                xanchor="left",
-                yanchor="top",
-            )
-        )
-
-        invest_fig = go.Figure()
-
-        # --- spodní: dynamická (plná) ---
-        invest_fig.add_trace(
-            go.Scatter(
-                x=df_btfd_plot_1["Datetime"],
-                y=df_btfd_plot_1["Cumulative"],
-                mode="lines",
-                line=dict(color="green", width=1.5),
-                name="Strategie 1",
-                customdata=btc_thinned['date_cz'],
-                hovertemplate="<b>Strategie 1: Celkově investováno (dynamická částka):</b> %{y:.2f} USD<br><b>Datum:</b> %{customdata}<extra></extra>"
-            )
-        )
-
-        invest_fig.add_trace(
-            go.Scatter(
-                x=df_btfd_plot_2["Datetime"],
-                y=df_btfd_plot_2["Cumulative"],
-                mode="lines",
-                line=dict(color="red", width=1.5),
-                name="Strategie 2",
-                customdata=btc_thinned['date_cz'],
-                hovertemplate="<b>Strategie 2: Celkově investováno (dynamická částka):</b> %{y:.2f} USD<br><b>Datum:</b> %{customdata}<extra></extra>"
-            )
-        )
-
-        # --- vrchní: fixní (dash) ---
-        invest_fig.add_trace(
-            go.Scatter(
-                x=df_btfd_plot_1["Datetime"],
-                y=INVEST_PER_DAY * np.arange(len(df_btfd_plot_1)),
-                mode="lines",
-                line=dict(color="#F7931A", dash="dash", width=1.5),
-                name=f"Fixní investice: {INVEST_PER_DAY} USD",
-                customdata=btc_thinned['date_cz'],
-                hovertemplate="<b>Celkově investováno (fixní částka):</b> %{y:.2f} USD<br><b>Datum:</b> %{customdata}<extra></extra>"
-            )
-        )
-
-        invest_fig.update_xaxes(
-            tickformat="%d.%m.%Y",  # formát osy
-            showgrid=True,  # zapnutí vertikálních grid line
-            gridwidth=1,  # tloušťka gridu
-            tickangle=-45,  # naklonění tick labelů
-            range=[
-                df_btfd_plot_1["Datetime"].min(),
-                df_btfd_plot_1["Datetime"].max() + dt.timedelta(days=2)
-            ]
-        )
-
-        invest_fig.update_layout(
-            xaxis_title="Čas",
-            yaxis_title="Investovaná částka [USD]",
-            hovermode="x unified",
-            legend=dict(
-                x=0.01,
-                y=0.99,
-                xanchor="left",
-                yanchor="top",
-            )
-        )
-
-        st.session_state.btfd_fig = btfd_fig
-        st.session_state.multiplier_fig = multiplier_fig
-        st.session_state.buy_fig = buy_fig
-        st.session_state.invest_fig = invest_fig
-        st.session_state.btfd_plot_key = plot_key1
-
-    with tab1a:
-        st.plotly_chart(st.session_state.btfd_fig, key="btfd_plot")
-
-    with tab2a:
-        st.plotly_chart(st.session_state.multiplier_fig, key="multiplier_plot")
-
-    with tab3a:
-        st.plotly_chart(st.session_state.buy_fig, key="buy_plot")
-
-    with tab4a:
-        st.plotly_chart(st.session_state.invest_fig, key="invest_plot")
-
-
-    plot_key2 = (
-        f"{st.session_state.btfd_plot_key}"
-    )
-
-    # tooltip
-    if 'trade_plot_key' not in st.session_state or st.session_state.trade_plot_key != plot_key2:
-        df_trade_plot1 = pd.DataFrame({
-            "Datetime": results_1[0]["buy_date_series"],
-            "ROI": results_1[0]["total_roi_series"],
-            "Avg_price": results_1[0]["avg_price_series"],
-            "Total_value": results_1[0]["total_value_series"],
-            "Total_btc": results_1[0]["total_btc_series"],
-        })
-
-        df_trade_plot2 = pd.DataFrame({
-            "Datetime": results_2[0]["buy_date_series"],
-            "ROI": results_2[0]["total_roi_series"],
-            "Avg_price": results_2[0]["avg_price_series"],
-            "Total_value": results_2[0]["total_value_series"],
-            "Total_btc": results_2[0]["total_btc_series"],
-        })
-
-        roi_fig = go.Figure()
-
-        roi_fig.add_trace(
-            go.Scatter(
-                x=df_trade_plot1["Datetime"],
-                y=df_trade_plot1["ROI"],
-                mode='lines',
-                name='Strategie 1',
-                line=dict(color='blue', width=1.5),
-                customdata=df_trade_plot1["Datetime"].dt.strftime('%d.%m.%Y'),
-                hovertemplate="<b>Strategie 1: Výnosnost investice:</b> %{y:.2f}%<br><b>Datum:</b> %{customdata}<extra></extra>"
-            )
-        )
-
-        roi_fig.add_trace(
-            go.Scatter(
-                x=df_trade_plot2["Datetime"],
-                y=df_trade_plot2["ROI"],
-                mode='lines',
-                name='Strategie 2',
-                line=dict(color='red', width=1.5),  # zde nastavíš barvu
-                customdata=df_trade_plot2["Datetime"].dt.strftime('%d.%m.%Y'),
-                hovertemplate="<b>Strategie 2: Výnosnost investice:</b> %{y:.2f}%<br><b>Datum:</b> %{customdata}<extra></extra>"
-            )
-        )
-
-        # formát osy X
-        roi_fig.update_xaxes(
-            tickformat="%d.%m.%Y",  # formát osy
-            showgrid=True,  # zapnutí vertikálních grid line
-            gridwidth=1,  # tloušťka gridu
-            tickangle=-45,  # naklonění tick labelů
-            range=[
-                df_trade_plot1["Datetime"].min(),
-                df_trade_plot1["Datetime"].max() + dt.timedelta(days=2)
-            ]
-        )
-
-        roi_fig.update_layout(
-            xaxis_title="Čas",
-            yaxis_title="Výnosnost investice [%]",
-            hovermode="x unified",
-            legend=dict(
-                x=0.01,
-                y=0.99,
-                xanchor="left",
-                yanchor="top",
-            )
-        )
-
-
-        avg_price_fig = go.Figure()
-
-        avg_price_fig.add_trace(
-            go.Scatter(
-                x=df_trade_plot1["Datetime"],
-                y=df_trade_plot1["Avg_price"],
-                mode='lines',
-                name='Strategie 1',
-                line=dict(color='blue', width=1.5),
-                customdata=df_trade_plot1["Datetime"].dt.strftime('%d.%m.%Y'),
-                hovertemplate="<b>Strategie 1: Průměrná nákupní cena:</b> %{y:.2f} USD<br><b>Datum:</b> %{customdata}<extra></extra>"
-            )
-        )
-
-        avg_price_fig.add_trace(
-            go.Scatter(
-                x=df_trade_plot2["Datetime"],
-                y=df_trade_plot2["Avg_price"],
-                mode='lines',
-                name='Strategie 2',
-                line=dict(color='red', width=1.5),  # zde nastavíš barvu
-                customdata=df_trade_plot2["Datetime"].dt.strftime('%d.%m.%Y'),
-                hovertemplate="<b>Strategie 2: Průměrná nákupní cena:</b> %{y:.2f} USD<br><b>Datum:</b> %{customdata}<extra></extra>"
-            )
-        )
-
-        # formát osy X
-        avg_price_fig.update_xaxes(
-            tickformat="%d.%m.%Y",  # formát osy
-            showgrid=True,  # zapnutí vertikálních grid line
-            gridwidth=1,  # tloušťka gridu
-            tickangle=-45,  # naklonění tick labelů
-            range=[
-                df_trade_plot1["Datetime"].min(),
-                df_trade_plot1["Datetime"].max() + dt.timedelta(days=2)
-            ]
-        )
-
-        avg_price_fig.update_layout(
-            xaxis_title="Čas",
-            yaxis_title="Průměrná nákupní cena [USD]",
-            hovermode="x unified",
-            legend=dict(
-                x=0.01,
-                y=0.99,
-                xanchor="left",
-                yanchor="top",
-            )
-        )
-
-        total_value_fig = go.Figure()
-
-        total_value_fig.add_trace(
-            go.Scatter(
-                x=df_trade_plot1["Datetime"],
-                y=df_trade_plot1["Total_value"],
-                mode='lines',
-                name='Strategie 1',
-                line=dict(color='blue', width=1.5),
-                customdata=df_trade_plot1["Datetime"].dt.strftime('%d.%m.%Y'),
-                hovertemplate="<b>Strategie 1: Celková hodnota:</b> %{y:.2f} USD<br><b>Datum:</b> %{customdata}<extra></extra>"
-            )
-        )
-
-        total_value_fig.add_trace(
-            go.Scatter(
-                x=df_trade_plot2["Datetime"],
-                y=df_trade_plot2["Total_value"],
-                mode='lines',
-                name='Strategie 2',
-                line=dict(color='red', width=1.5),  # zde nastavíš barvu
-                customdata=df_trade_plot2["Datetime"].dt.strftime('%d.%m.%Y'),
-                hovertemplate="<b>Strategie 2: Celková hodnota:</b> %{y:.2f} USD<br><b>Datum:</b> %{customdata}<extra></extra>"
-            )
-        )
-
-        # formát osy X
-        total_value_fig.update_xaxes(
-            tickformat="%d.%m.%Y",  # formát osy
-            showgrid=True,  # zapnutí vertikálních grid line
-            gridwidth=1,  # tloušťka gridu
-            tickangle=-45,  # naklonění tick labelů
-            range=[
-                df_trade_plot1["Datetime"].min(),
-                df_trade_plot1["Datetime"].max() + dt.timedelta(days=2)
-            ]
-        )
-
-        total_value_fig.update_layout(
-            xaxis_title="Čas",
-            yaxis_title="Celková hodnota [USD]",
-            hovermode="x unified",
-            legend=dict(
-                x=0.01,
-                y=0.99,
-                xanchor="left",
-                yanchor="top",
-            )
-        )
-
-
-        total_btc_fig = go.Figure()
-
-        total_btc_fig.add_trace(
-            go.Scatter(
-                x=df_trade_plot1["Datetime"],
-                y=df_trade_plot1["Total_btc"],
-                mode='lines',
-                name='Strategie 1',
-                line=dict(color='blue', width=1.5),
-                customdata=df_trade_plot1["Datetime"].dt.strftime('%d.%m.%Y'),
-                hovertemplate="<b>Strategie 1: Celkové množství BTC:</b> %{y:.8f}<br><b>Datum:</b> %{customdata}<extra></extra>"
-            )
-        )
-
-        total_btc_fig.add_trace(
-            go.Scatter(
-                x=df_trade_plot2["Datetime"],
-                y=df_trade_plot2["Total_btc"],
-                mode='lines',
-                name='Strategie 2',
-                line=dict(color='red', width=1.5),  # zde nastavíš barvu
-                customdata=df_trade_plot2["Datetime"].dt.strftime('%d.%m.%Y'),
-                hovertemplate="<b>Strategie 2: Celkové množství BTC:</b> %{y:.8f}<br><b>Datum:</b> %{customdata}<extra></extra>"
-            )
-        )
-
-        # formát osy X
-        total_btc_fig.update_xaxes(
-            tickformat="%d.%m.%Y",  # formát osy
-            showgrid=True,  # zapnutí vertikálních grid line
-            gridwidth=1,  # tloušťka gridu
-            tickangle=-45,  # naklonění tick labelů
-            range=[
-                df_trade_plot1["Datetime"].min(),
-                df_trade_plot1["Datetime"].max() + dt.timedelta(days=2)
-            ]
-        )
-
-        total_btc_fig.update_layout(
-            xaxis_title="Čas",
-            yaxis_title="Celkové množství BTC",
-            hovermode="x unified",
-            legend=dict(
-                x=0.01,
-                y=0.99,
-                xanchor="left",
-                yanchor="top",
-            )
-        )
-
-        st.session_state.roi_fig = roi_fig
-        st.session_state.avg_price_fig = avg_price_fig
-        st.session_state.total_value_fig = total_value_fig
-        st.session_state.total_btc_fig = total_btc_fig
-        st.session_state.trade_plot_key = plot_key2
-
-    tab1b, tab2b, tab3b, tab4b = st.tabs(["Procentuální zhodnocení", "Průměrná nákupní cena", "Aktuální hodnota", "Nakoupené množství BTC"])
-
-    with tab1b:
-        st.plotly_chart(st.session_state.roi_fig, key="roi_plot")
-    with tab2b:
-        st.plotly_chart(st.session_state.avg_price_fig, key="avg_price_plot")
-    with tab3b:
-        st.plotly_chart(st.session_state.total_value_fig, key="total_value_plot")
-    with tab4b:
-        st.plotly_chart(st.session_state.total_btc_fig, key="total_btc_plot")
-
-    # --- 1. TOP podle průměrné ceny ---
-
-    col1b, col2b = st.columns(2)
-
-    with col1b:
-        fills = {k: round(float(v) * 100, 1) for k, v in results_1[0]['avg_fill_rate'].items()}
-        st.write(f" Váhy: {list(results_1[0]['weights'])}, **Tržní nákup:** {list(results_1[0]['market_buy_for'])}")
-        st.write(f"- Průměrná cena: {results_1[0]['avg_price_series'][-1]:.2f} USD")
-        st.write(f"- Celkové BTC: {results_1[0]['total_btc']:.8f}")
-        st.write(f"- Celkově vložený kapitál: {results_1[0]['total_cost']:.2f} USD")
-        st.write(f"- Počet dnů: {results_1[0]['days']}")
-        st.write(f"- Celkový zisk: {results_1[0]['total_profit']:.2f} USD")
-        st.write(f"- ROI: {results_1[0]['ROI']:.2f} %")
-        st.write(f"- ROI p.a.: {results_1[0]['ROI_pa']:.2f} %")
-        st.write(f"- Využití kapitálu: {results_1[0]['efficiency']:.2f} %")
-        if results_1[0]['uninvested_amount'] > 0:
-            st.write(f"- Neinvestováno: {results_1[0]['uninvested_amount']:.2f} USD")
-        else:
-            st.write(f"- Přebytečně investováno: {-results_1[0]['uninvested_amount']:.2f} USD")
-        st.write(f"- Celkem: {results_1[0]['total_amount']:.2f} USD")
-        st.write(f"- Naplňění limitných příkazů: {fills}")
-        st.write(f"- Limit %: {results_1[0]['percent_limit_invest']:.1f} %")
-        st.write(f"- Market %: {results_1[0]['percent_market_invest']:.1f} %")
-        st.write("---")
-
-    with col2b:
-        fills = {k: round(float(v) * 100, 1) for k, v in results_2[0]['avg_fill_rate'].items()}
-        st.write(f" Váhy: {list(results_2[0]['weights'])}, **Tržní nákup:** {list(results_2[0]['market_buy_for'])}")
-        st.write(f"- Průměrná cena: {results_2[0]['avg_price_series'][-1]:.2f} USD")
-        st.write(f"- Celkové BTC: {results_2[0]['total_btc']:.8f}")
-        st.write(f"- Celkově vložený kapitál: {results_2[0]['total_cost']:.2f} USD")
-        st.write(f"- Počet dnů: {results_2[0]['days']}")
-        st.write(f"- Celkový zisk: {results_2[0]['total_profit']:.2f} USD")
-        st.write(f"- ROI: {results_2[0]['ROI']:.2f} %")
-        st.write(f"- ROI p.a.: {results_2[0]['ROI_pa']:.2f} %")
-        st.write(f"- Využití kapitálu: {results_2[0]['efficiency']:.2f} %")
-        if results_2[0]['uninvested_amount'] > 0:
-            st.write(f"- Neinvestováno: {results_2[0]['uninvested_amount']:.2f} USD")
-        else:
-            st.write(f"- Přebytečně investováno: {-results_2[0]['uninvested_amount']:.2f} USD")
-        st.write(f"- Celkem: {results_2[0]['total_amount']:.2f} USD")
-        st.write(f"- Naplňění limitných příkazů: {fills}")
-        st.write(f"- Limit %: {results_2[0]['percent_limit_invest']:.1f} %")
-        st.write(f"- Market %: {results_2[0]['percent_market_invest']:.1f} %")
-        st.write("---")
-else:
-    st.warning("Neplatné nastavení vah. Upravte váhy tak, aby jejich součet byl přesně roven 1.00.")    
+            st.write("Nenalezen žádný validní výsledek. Zkontrolujte součet vah a formát dat.")
+st.write("---")
 
 # --- BTFD statistika ---
 
