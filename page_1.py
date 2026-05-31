@@ -26,7 +26,7 @@ st.markdown("""
 
             V této kalkulačce můžete simulovat, jak by se vaše investovaná částka vyvíjela v závislosti na zvoleném časovém období,
             výši pravidelné investice a nastavení multiplikátoru **&beta;** pro index **BTFD**. Výchozí investiční částka nákupu 
-            bude pro každou objednávku zvýšena či snížena podle aktuální hodnoty násobitele **&beta;**. Předpokládaná frekvence nákupiu je 1x denně.
+            bude pro každou objednávku zvýšena či snížena podle aktuální hodnoty násobitele **&beta;**. Předpokládaná frekvence nákupu je 1x denně.
             """)
 start = time.time()
 
@@ -206,7 +206,7 @@ st.number_input(
 
 # --- Slider ---
 st.slider(
-    "",
+    " ",
     min_value=10,
     max_value=90,
     step=1,
@@ -246,7 +246,7 @@ st.number_input(
 
 # --- Slider ---
 st.slider(
-    "",
+    " ",
     min_value=1.0,
     max_value=10.0,
     step=0.1,
@@ -266,7 +266,7 @@ if "investment_number" not in st.session_state:
 
 # --- Number input fee_market ---
 st.number_input(
-    "Investovaná částka (USD)",
+    "Investovaná částka [USD]",
     min_value=10,
     max_value=10000,
     step=10,
@@ -321,6 +321,8 @@ if ('btfd_thinned' not in st.session_state
     st.session_state.last_btfd_thinned_key = btfd_thinned_key
 
 btfd_thinned = st.session_state.btfd_thinned
+
+st.header("Vývoj indexu BTFD, multiplikátoru &beta; a investované částky v čase")
 
 tab1, tab2, tab3, tab4 = st.tabs(["BTFD", "Multiplikátor","Nákupní částka", "Investovaná částka"])
 
