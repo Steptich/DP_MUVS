@@ -8,7 +8,18 @@ import pandas as pd
 import numpy as np
 import time
 
-st.header("HANIČKA JE ŠIKULKA")
+st.header("Porovnávač strategií")
+
+st.markdown("""
+            Tento porovnávač umožňuje zpětně porovnávat výkon libovolného počtu zadaných investičních strategií na základě historických tržních dat.
+            Pro spuštění backtestu porovnávače je nezbytné pro všechny strategie zvolit společné časové období, transakční poplatky,
+            výši pravidelné investice a nastavení multiplikátoru **&beta;** pro index **BTFD**, 
+            kterým bude pro každou objednávku zvýšena či snížena investovaná částka podle aktuální hodnoty násobitele **&beta;**.
+            Jednotlivé strategie lze nastavit skrze odlišené limitní příkazy pro nákupy v korekci. Předpokládaná frekvence nákupu je 1x denně.
+
+            Vyhodnocení strategií se provádí na základě klíčových metrik: zhodnocení investice (ROI), 
+            průměrná nákupní cena, celkový absolutní zisk z investice, množství nakoupeného BTC a efektivita využítí kapitálu.
+            """, text_alignment="justify")
 
 start = time.time()
 
@@ -162,6 +173,15 @@ if 'btc_plot_key' not in st.session_state or st.session_state.btc_plot_key != pl
 
 st.plotly_chart(st.session_state.btc_fig, key="btc_plot")
 
+st.header("Nastavení dynamické strategie BTFD")
+
+st.markdown("""
+        Nastavte parametry pro výpočet multiplikátoru **&beta;**, který bude určovat výši investice pro každý nákup. 
+        Multiplikátor bude vypočítán na základě indexu **BTFD**, který měří, jak moc je aktuální cena pod svým historickým maximem.
+
+        Parametry můžete nastavit buď pomocí slideru, nebo zadáním konkrétní hodnoty do pole pro číslo. 
+        Obě možnosti jsou synchronizované, takže změna v jednom z nich se projeví i v druhém.""",text_alignment="justify")
+
 # --- Inicializace session_state ---
 if "btfdmin_slider" not in st.session_state:
     st.session_state.btfdmin_slider = 75  # default hodnota
@@ -182,7 +202,7 @@ def min_number_changed():
 
 # --- Number input ---
 st.number_input(
-    "Insert min value",
+    "Maximální pokles uvažovaný pokles ceny pro výpočet multiplikátoru **&beta;** [%]:",
     min_value=10,
     max_value=90,
     step=1,
@@ -192,12 +212,13 @@ st.number_input(
 
 # --- Slider ---
 st.slider(
-    "Select min range value",
+    " ",
     min_value=10,
     max_value=90,
     step=1,
     key="btfdmin_slider",
-    on_change=min_slider_changed
+    on_change=min_slider_changed,
+    label_visibility="collapsed"
 )
 
 BTFD_MIN = - st.session_state.btfdmin_slider
@@ -222,7 +243,7 @@ def number_changed():
 
 # --- Number input ---
 st.number_input(
-    "Insert a number",
+    "Maximální hodnota multiplikátoru **&beta;**:",
     min_value=1.0,
     max_value=10.0,
     step=0.1,
@@ -233,13 +254,14 @@ st.number_input(
 
 # --- Slider ---
 st.slider(
-    "Select a range of values",
+    " ",
     min_value=1.0,
     max_value=10.0,
     step=0.1,
     format="%0.1f",
     key="btfdMULTI_slider",
-    on_change=slider_changed
+    on_change=slider_changed,
+    label_visibility="collapsed"
 )
 
 MAX_MULTIPLIER = st.session_state.btfdMULTI_slider
@@ -250,7 +272,7 @@ if "investment_number" not in st.session_state:
 
 # --- Number input fee_market ---
 st.number_input(
-    "Investment (USD)",
+    "Investovaná částka [USD]",
     min_value=10,
     max_value=10000,
     step=10,
@@ -288,6 +310,18 @@ btfd = st.session_state.btfd_with_multiplier
 
 multipliers = btfd['Multiplier'].to_numpy()
 
+st.header("Nastavení poplatků pro simulaci")
+
+st.markdown("""
+            Na každé kryptoburze nebo směnárně se platí transakční poplatky za spostředkování obchodu.
+            Pozice, které dodávají likviditu na trh (limitní příkazy) jsou zpravidla zvýhodněné oproti pozicím, 
+            které likviditu na trhu odebírají (tržní příkazy). Poplatky mohou hrát významnou roli v celkové výkonnosti 
+            investiční strategie, zejména u strategií s častými obchody, jako je DCA.
+
+            Zadejte poplatky pro limitní a tržní příkazy, které budou použity v simulaci. Poplatky můžete 
+            nastavit buď pomocí slideru, nebo zadáním konkrétní hodnoty do pole pro číslo. 
+            Obě možnosti jsou synchronizované.""",text_alignment="justify")
+
 
 # --- Inicializace session_state pro fee_limit ---
 if "fee_limit_slider" not in st.session_state:
@@ -309,7 +343,7 @@ def fee_limit_number_changed():
 
 # --- Number input fee_limit ---
 st.number_input(
-    "Fee Limit (%)",
+    "Poplatek za limitní příkaz [%]",
     min_value=0.0,
     max_value=1.0,
     step=0.01,
@@ -320,13 +354,14 @@ st.number_input(
 
 # --- Slider fee_limit ---
 st.slider(
-    "Select Fee Limit (%)",
+    " ",
     min_value=0.0,
     max_value=1.0,
     step=0.01,
     format="%0.2f",
     key="fee_limit_slider",
-    on_change=fee_limit_slider_changed
+    on_change=fee_limit_slider_changed,
+    label_visibility="collapsed"
 )
 
 FEE_LIMIT = st.session_state.fee_limit_slider / 100
@@ -351,7 +386,7 @@ def fee_market_number_changed():
 
 # --- Number input fee_market ---
 st.number_input(
-    "Fee Market (%)",
+    "Poplatek za tržní příkaz [%]",
     min_value=0.0,
     max_value=1.0,
     step=0.01,
@@ -362,13 +397,14 @@ st.number_input(
 
 # --- Slider fee_market ---
 st.slider(
-    "Select Fee Market (%)",
+    " ",
     min_value=0.0,
     max_value=1.0,
     step=0.01,
     format="%0.2f",
     key="fee_market_slider",
-    on_change=fee_market_slider_changed
+    on_change=fee_market_slider_changed,
+    label_visibility="collapsed"
 )
 
 FEE_MARKET = st.session_state.fee_market_slider / 100
@@ -547,7 +583,14 @@ def run_backtest(weights, market_set):
 
     return results
 
-uploaded_file = st.file_uploader("Nahraj CSV/XLSX s váhami", type=["csv", "xlsx"])
+st.header("Nahrání strategií pro porovnání")
+
+st.markdown("""
+            Pro porovnání strategií nahrajte CSV nebo XLSX soubor, který bude obsahovat váhy pro jednotlivé úrovně korekce (sloupce `lvl_0`, `lvl_1`, ..., `lvl_5`).
+            Každý řádek v souboru bude reprezentovat jednu strategii, přičemž váhy musí být v rozsahu 0–1 a jejich součet musí být roven 1.
+            Po nahrání souboru se zobrazí tabulka s načtenými váhami a následně se spustí backtest pro každou strategii přes všechny možné kombinace tržních nákupů, které odpovídají zadaným váhám.""",text_alignment="justify")
+
+uploaded_file = st.file_uploader("Vložte CSV/XLSX s váhami", type=["csv", "xlsx"])
 
 all_results = []
 
@@ -562,8 +605,14 @@ if uploaded_file:
 
     row_cols = [c for c in required_cols if c in df.columns]
 
+    # reset indexu => garantuje 0..n-1
+    df = df.reset_index(drop=True)
+    
+    # strategie číslo odpovídá řádku (index + 1)
+    df.insert(0, "Strategie č.", df.index + 1)
+    
     st.write("Načtené váhy:")
-    st.dataframe(df)
+    st.dataframe(df, hide_index=True)
 
     # chybějící sloupce
     missing = set(required_cols) - set(df.columns)
@@ -571,6 +620,7 @@ if uploaded_file:
         st.error(f"Chybí sloupce {sorted(missing)}")
 
     else:      
+        st.header("Výsledky a porovnání strategií")
 
         for seq_number, row in df.iterrows():
 
@@ -811,12 +861,13 @@ if uploaded_file:
                             st.write(f"- Market %: {result['percent_market_invest']:.1f} %")
 
             with tab3a:
+                st.header("Nejlepší strategie podle celkového zisku")
                 cols = st.columns(3)
-
+                
 
                 top3 = df.sort_values("total_profit", ascending=False).head(3)
                 bot3 = df.sort_values("total_profit", ascending=True).head(3)
-
+                
                 for rank, (_, result) in enumerate(top3.iterrows()):
                       with cols[rank]:
                             if rank == 0: st.subheader(f"🥇 {result['total_profit']:.0f} USD")
@@ -896,6 +947,7 @@ if uploaded_file:
                             st.write(f"- Limit %: {result['percent_limit_invest']:.1f} %")
                             st.write(f"- Market %: {result['percent_market_invest']:.1f} %")
             with tab4a:
+                st.header("Nejlepší strategie podle nakoupeného množství BTC")
                 cols = st.columns(3)
 
 
@@ -982,6 +1034,7 @@ if uploaded_file:
                             st.write(f"- Market %: {result['percent_market_invest']:.1f} %")
 
             with tab5a:
+                st.header("Nejlepší strategie podle využití kapitálu")
                 cols = st.columns(3)
 
 
@@ -1093,4 +1146,4 @@ median_monthly_invest = median_daily_invest * 30
 
 end = time.time()
 
-st.write(f"Total runtime of the program is {end - start} seconds")
+#st.write(f"Total runtime of the program is {end - start} seconds")

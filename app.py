@@ -8,7 +8,7 @@ with sidebar:
 # Define the pages
 page_1 = st.Page("page_1.py", title="Nastavení dynamické DCA strategie", icon="🎈")
 page_2 = st.Page("page_2.py", title="Historický Backtest", icon="✈")
-page_3 = st.Page("page_3.py", title="Srovnávač strategií", icon="🎉")
+page_3 = st.Page("page_3.py", title="Porovnávač strategií", icon="🎉")
 
 
 # Set up navigation
