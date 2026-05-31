@@ -9,8 +9,25 @@ import numpy as np
 import time
 
 
-st.header("HANIČKA JE ŠIKULKA")
+st.header("Dynamick8 DCA strategie")
+st.markdown("""
+            **Dollar-Cost Averaging** je nejjednodušší a zároveň velmi efektivní metoda postupného nakupování, 
+            při níž investor pravidelně investuje pevně stanovenou částku kapitálu do vybraného aktiva bez ohledu
+            na aktuální tržní cenu. Tím dochází k automatickému rozložení nákupů v čase.
 
+            Strategie je založena na předpokladu, že systematické rozložení nákupů může snížit riziko
+            spojené s investicí realizovanou v nevhodném okamžiku a zmírnit dopad krátkodobé
+            volatility trhu na výslednou hodnotu portfolia.
+
+            Dynamické investiční strategie dále představují přístup, který průběžně upravuje expozici
+            portfolia v reakci na měnící se investiční příležitosti a tržní podmínky. Dynamicky indexově řízené strategie mohou být
+             založeny na různých typech tržních signálů, přičemž jedním z nejčastěji zkoumaných je reakce na krátkodobé cenové 
+            poklesy. Na tomto principu je založen také index **BTFD**, který měří, jak moc je aktuální cena aktiva pod svým historickým maximem. 
+
+            V této kalkulačce můžete simulovat, jak by se vaše investovaná částka vyvíjela v závislosti na zvoleném časovém období,
+            výši pravidelné investice a nastavení multiplikátoru **&beta;** pro index **BTFD**. Výchozí investiční částka nákupu 
+            bude pro každou objednávku zvýšena či snížena podle aktuální hodnoty násobitele **&beta;**. Předpokládaná frekvence nákupiu je 1x denně.
+            """)
 start = time.time()
 
 btc_full = tr.load_btc_data()
@@ -153,6 +170,14 @@ if 'btc_plot_key' not in st.session_state or st.session_state.btc_plot_key != pl
 
 st.plotly_chart(st.session_state.btc_fig,key="btc_plot")
 
+st.header("Nastavení dynamické strategie BTFD")
+
+st.write("""
+        Nastavte parametry pro výpočet multiplikátoru **&beta;**, který bude určovat výši investice pro každý nákup. 
+        Multiplikátor bude vypočítán na základě indexu **BTFD**, který měří, jak moc je aktuální cena pod svým historickým maximem.
+
+        Parametry můžete nastavit buď pomocí slideru, nebo zadáním konkrétní hodnoty do pole pro číslo. 
+        Obě možnosti jsou synchronizované, takže změna v jednom z nich se projeví i v druhém.""")
 
 # --- Inicializace session_state ---
 if "btfdmin_slider" not in st.session_state:
@@ -171,7 +196,7 @@ def min_number_changed():
 
 # --- Number input ---
 st.number_input(
-    "Insert min value",
+    "Maximální pokles uvažovaný pokles ceny pro výpočet multiplikátoru **&beta;** [%]:",
     min_value=10,
     max_value=90,
     step=1,
@@ -181,12 +206,13 @@ st.number_input(
 
 # --- Slider ---
 st.slider(
-    "Select min range value",
+    "",
     min_value=10,
     max_value=90,
     step=1,
     key="btfdmin_slider",
-    on_change=min_slider_changed
+    on_change=min_slider_changed,
+    label_visibility="collapsed"
 )
 
 BTFD_MIN = - st.session_state.btfdmin_slider
@@ -209,7 +235,7 @@ def number_changed():
 
 # --- Number input ---
 st.number_input(
-    "Insert a number",
+    "Maximální hodnota multiplikátoru **&beta;**:",
     min_value=1.0,
     max_value=10.0,
     step=0.1,
@@ -220,13 +246,14 @@ st.number_input(
 
 # --- Slider ---
 st.slider(
-    "Select a range of values",
+    "",
     min_value=1.0,
     max_value=10.0,
     step=0.1,
     format="%0.1f",
     key="btfdMULTI_slider",
-    on_change=slider_changed
+    on_change=slider_changed,
+    label_visibility="collapsed"
 )
 
 MAX_MULTIPLIER = st.session_state.btfdMULTI_slider
@@ -239,7 +266,7 @@ if "investment_number" not in st.session_state:
 
 # --- Number input fee_market ---
 st.number_input(
-    "Investment (USD)",
+    "Investovaná částka (USD)",
     min_value=10,
     max_value=10000,
     step=10,
@@ -515,4 +542,4 @@ with tab4:
 
 end = time.time()
 
-st.write(f"Total runtime of the program is {end - start} seconds")
+#st.write(f"Total runtime of the program is {end - start} seconds")
