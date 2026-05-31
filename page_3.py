@@ -586,9 +586,24 @@ def run_backtest(weights, market_set):
 st.header("Nahrání strategií pro porovnání")
 
 st.markdown("""
-            Pro porovnání strategií nahrajte CSV nebo XLSX soubor, který bude obsahovat váhy pro jednotlivé úrovně korekce (sloupce `lvl_0`, `lvl_1`, ..., `lvl_5`).
-            Každý řádek v souboru bude reprezentovat jednu strategii, přičemž váhy musí být v rozsahu 0–1 a jejich součet musí být roven 1.
-            Po nahrání souboru se zobrazí tabulka s načtenými váhami a následně se spustí backtest pro každou strategii přes všechny možné kombinace tržních nákupů, které odpovídají zadaným váhám.""",text_alignment="justify")
+            Pro porovnání strategií nahrajte CSV nebo XLSX soubor, který bude obsahovat váhy pro 
+            jednotlivé úrovně korekce (jako první řádek je hlavička s sloupci `lvl_0`, `lvl_1`, ..., `lvl_5`).
+            Každý další řádek v souboru bude reprezentovat jednu strategii, přičemž váhy musí být v rozsahu 0–1 
+            a jejich součet musí být roven 1.Po nahrání souboru se zobrazí tabulka s načtenými váhami a následně 
+            se spustí backtest pro každou strategii přes všechny možné kombinace tržních nákupů, které odpovídají zadaným váhám.
+            
+            Ukázka správného formátu:""",text_alignment="justify")
+
+df_ukazka = pd.DataFrame({
+    "lvl_0": [0.5, 0.4],
+    "lvl_1": [0.3, 0.4],
+    "lvl_2": [0.2, 0.2],
+    "lvl_3": [0.0, 0.0],
+    "lvl_4": [0.0, 0.0],
+    "lvl_5": [0.0, 0.0],
+})
+st.dataframe(df_ukazka, hide_index=True)
+
 
 uploaded_file = st.file_uploader("Vložte CSV/XLSX s váhami", type=["csv", "xlsx"])
 
@@ -697,9 +712,9 @@ if uploaded_file:
 
                 for rank, (_, result) in enumerate(top3.iterrows()):
                       with cols[rank]:
-                            if rank == 0: st.subheader(f"🥇 {result['ROI']:.2f} %")
-                            if rank == 1: st.subheader(f"🥈 {result['ROI']:.2f} %")
-                            if rank == 2: st.subheader(f"🥉 {result['ROI']:.2f} %")
+                            if rank == 0: st.subheader(f"🥇 {result['ROI']:.2f}&nbsp;%")
+                            if rank == 1: st.subheader(f"🥈 {result['ROI']:.2f}&nbsp;%")
+                            if rank == 2: st.subheader(f"🥉 {result['ROI']:.2f}&nbsp;%")
 
                             result = result.to_dict()
 
@@ -714,33 +729,33 @@ if uploaded_file:
                             **Tržní nákup:** {list(result['market_set'])}
                             """)
 
-                            st.write(f"- Průměrná cena: {result['avg_price_series'][-1]:.2f} USD")
-                            st.write(f"- Celkové BTC: {result['total_btc']:.8f}")
-                            st.write(f"- Celkově vložený kapitál: {result['total_cost']:.2f} USD")
-                            st.write(f"- Počet dnů: {result['days']}")
-                            st.write(f"- Celkový zisk: {result['total_profit']:.2f} USD")
-                            st.write(f"- ROI: {result['ROI']:.2f} %")
-                            st.write(f"- ROI p.a.: {result['ROI_pa']:.2f} %")
-                            st.write(f"- Využití kapitálu: {result['efficiency']:.2f} %")
+                            st.write(f"- Průměrná nákupní cena: {result['avg_price_series'][-1]:.2f}&nbsp;USD")
+                            st.write(f"- Celkové množství BTC: {result['total_btc']:.8f}")
+                            st.write(f"- Celkově vložený kapitál: {result['total_cost']:.2f}&nbsp;USD")
+                            st.write(f"- Počet obchodních dnů: {result['days']}")
+                            st.write(f"- Celkový zisk: {result['total_profit']:.2f}&nbsp;USD")
+                            st.write(f"- Výnos (ROI): {result['ROI']:.2f}&nbsp;%")
+                            st.write(f"- Výnos (ROI) p.a.: {result['ROI_pa']:.2f}&nbsp;%")
+                            st.write(f"- Využití kapitálu: {result['efficiency']:.2f}&nbsp;%")
 
                             if result['uninvested_amount'] > 0:
-                                st.write(f"- Neinvestováno: {result['uninvested_amount']:.2f} USD")
+                                st.write(f"- Neinvestováno: {result['uninvested_amount']:.2f}&nbsp;USD")
                             else:
-                                st.write(f"- Přebytečně investováno: {-result['uninvested_amount']:.2f} USD")
+                                st.write(f"- Přebytečně investováno: {-result['uninvested_amount']:.2f}&nbsp;USD")
 
-                            st.write(f"- Celkem: {result['total_amount']:.2f} USD")
+                            st.write(f"- Konečná hodnota investice: {result['total_amount']:.2f}&nbsp;USD")
                             st.write(f"- Naplnění limitních příkazů: {fills}")
-                            st.write(f"- Limit %: {result['percent_limit_invest']:.1f} %")
-                            st.write(f"- Market %: {result['percent_market_invest']:.1f} %")
+                            st.write(f"- Podíl limitních příkazů:  {result['percent_limit_invest']:.1f}&nbsp;%")
+                            st.write(f"- Podíl tržních příkazů: {result['percent_market_invest']:.1f}&nbsp;%")
 
                 st.header("Nejhorší strategie podle ROI (%)")
                 cols = st.columns(3)
 
                 for rank, (_, result) in enumerate(bot3.iterrows()):
                       with cols[rank]:
-                            if rank == 0: st.subheader(f"🔻 {result['ROI']:.2f} %")
-                            if rank == 1: st.subheader(f"🔻 {result['ROI']:.2f} %")
-                            if rank == 2: st.subheader(f"🔻 {result['ROI']:.2f} %")
+                            if rank == 0: st.subheader(f"🔻 {result['ROI']:.2f}&nbsp;%")
+                            if rank == 1: st.subheader(f"🔻 {result['ROI']:.2f}&nbsp;%")
+                            if rank == 2: st.subheader(f"🔻 {result['ROI']:.2f}&nbsp;%")
 
                             result = result.to_dict()
 
@@ -755,24 +770,24 @@ if uploaded_file:
                             **Tržní nákup:** {list(result['market_set'])}
                             """)
 
-                            st.write(f"- Průměrná cena: {result['avg_price_series'][-1]:.2f} USD")
-                            st.write(f"- Celkové BTC: {result['total_btc']:.8f}")
-                            st.write(f"- Celkově vložený kapitál: {result['total_cost']:.2f} USD")
-                            st.write(f"- Počet dnů: {result['days']}")
-                            st.write(f"- Celkový zisk: {result['total_profit']:.2f} USD")
-                            st.write(f"- ROI: {result['ROI']:.2f} %")
-                            st.write(f"- ROI p.a.: {result['ROI_pa']:.2f} %")
-                            st.write(f"- Využití kapitálu: {result['efficiency']:.2f} %")
+                            st.write(f"- Průměrná cena: {result['avg_price_series'][-1]:.2f}&nbsp;USD")
+                            st.write(f"- Celkové množství BTC: {result['total_btc']:.8f}")
+                            st.write(f"- Celkově vložený kapitál: {result['total_cost']:.2f}&nbsp;USD")
+                            st.write(f"- Počet obchodních dnů: {result['days']}")
+                            st.write(f"- Celkový zisk: {result['total_profit']:.2f}&nbsp;USD")
+                            st.write(f"- Výnos (ROI): {result['ROI']:.2f}&nbsp;%")
+                            st.write(f"- Výnos (ROI) p.a.: {result['ROI_pa']:.2f}&nbsp;%")
+                            st.write(f"- Využití kapitálu: {result['efficiency']:.2f}&nbsp;%")
 
                             if result['uninvested_amount'] > 0:
-                                st.write(f"- Neinvestováno: {result['uninvested_amount']:.2f} USD")
+                                st.write(f"- Neinvestováno: {result['uninvested_amount']:.2f}&nbsp;USD")
                             else:
-                                st.write(f"- Přebytečně investováno: {-result['uninvested_amount']:.2f} USD")
+                                st.write(f"- Přebytečně investováno: {-result['uninvested_amount']:.2f}&nbsp;USD")
 
-                            st.write(f"- Celkem: {result['total_amount']:.2f} USD")
+                            st.write(f"- Konečná hodnota investice: {result['total_amount']:.2f}&nbsp;USD")
                             st.write(f"- Naplnění limitních příkazů: {fills}")
-                            st.write(f"- Limit %: {result['percent_limit_invest']:.1f} %")
-                            st.write(f"- Market %: {result['percent_market_invest']:.1f} %")
+                            st.write(f"- Podíl limitních příkazů:  {result['percent_limit_invest']:.1f}&nbsp;%")
+                            st.write(f"- Podíl tržních příkazů: {result['percent_market_invest']:.1f}&nbsp;%")
             
             with tab2a:
                 st.header("Nejlepší strategie podle průměrné nákupní ceny")
@@ -784,9 +799,9 @@ if uploaded_file:
 
                 for rank, (_, result) in enumerate(top3.iterrows()):
                      with cols[rank]:
-                            if rank == 0: st.subheader(f"🥇 {result['avg_price_final']:.0f} USD")
-                            if rank == 1: st.subheader(f"🥈 {result['avg_price_final']:.0f} USD")
-                            if rank == 2: st.subheader(f"🥉 {result['avg_price_final']:.0f} USD")
+                            if rank == 0: st.subheader(f"🥇 {result['avg_price_final']:.0f}&nbsp;USD")
+                            if rank == 1: st.subheader(f"🥈 {result['avg_price_final']:.0f}&nbsp;USD")
+                            if rank == 2: st.subheader(f"🥉 {result['avg_price_final']:.0f}&nbsp;USD")
                             result = result.to_dict()
 
                             fills = {
@@ -800,33 +815,33 @@ if uploaded_file:
                             **Tržní nákup:** {list(result['market_set'])}
                             """)
 
-                            st.write(f"- Průměrná cena: {result['avg_price_series'][-1]:.2f} USD")
-                            st.write(f"- Celkové BTC: {result['total_btc']:.8f}")
-                            st.write(f"- Celkově vložený kapitál: {result['total_cost']:.2f} USD")
-                            st.write(f"- Počet dnů: {result['days']}")
-                            st.write(f"- Celkový zisk: {result['total_profit']:.2f} USD")
-                            st.write(f"- ROI: {result['ROI']:.2f} %")
-                            st.write(f"- ROI p.a.: {result['ROI_pa']:.2f} %")
-                            st.write(f"- Využití kapitálu: {result['efficiency']:.2f} %")
+                            st.write(f"- Průměrná cena: {result['avg_price_series'][-1]:.2f}&nbsp;USD")
+                            st.write(f"- Celkové množství BTC: {result['total_btc']:.8f}")
+                            st.write(f"- Celkově vložený kapitál: {result['total_cost']:.2f}&nbsp;USD")
+                            st.write(f"- Počet obchodních dnů: {result['days']}")
+                            st.write(f"- Celkový zisk: {result['total_profit']:.2f}&nbsp;USD")
+                            st.write(f"- Výnos (ROI): {result['ROI']:.2f}&nbsp;%")
+                            st.write(f"- Výnos (ROI) p.a.: {result['ROI_pa']:.2f}&nbsp;%")
+                            st.write(f"- Využití kapitálu: {result['efficiency']:.2f}&nbsp;%")
 
                             if result['uninvested_amount'] > 0:
-                                st.write(f"- Neinvestováno: {result['uninvested_amount']:.2f} USD")
+                                st.write(f"- Neinvestováno: {result['uninvested_amount']:.2f}&nbsp;USD")
                             else:
-                                st.write(f"- Přebytečně investováno: {-result['uninvested_amount']:.2f} USD")
+                                st.write(f"- Přebytečně investováno: {-result['uninvested_amount']:.2f}&nbsp;USD")
 
-                            st.write(f"- Celkem: {result['total_amount']:.2f} USD")
+                            st.write(f"- Konečná hodnota investice: {result['total_amount']:.2f}&nbsp;USD")
                             st.write(f"- Naplnění limitních příkazů: {fills}")
-                            st.write(f"- Limit %: {result['percent_limit_invest']:.1f} %")
-                            st.write(f"- Market %: {result['percent_market_invest']:.1f} %")
+                            st.write(f"- Podíl limitních příkazů:  {result['percent_limit_invest']:.1f}&nbsp;%")
+                            st.write(f"- Podíl tržních příkazů: {result['percent_market_invest']:.1f}&nbsp;%")
 
                 st.header("Nejhorší strategie podle průměrné nákupní ceny")
                 cols = st.columns(3)
 
                 for rank, (_, result) in enumerate(bot3.iterrows()):
                       with cols[rank]:
-                            if rank == 0: st.subheader(f"🔻 {result['avg_price_final']:.0f} USD")
-                            if rank == 1: st.subheader(f"🔻 {result['avg_price_final']:.0f} USD")
-                            if rank == 2: st.subheader(f"🔻 {result['avg_price_final']:.0f} USD")
+                            if rank == 0: st.subheader(f"🔻 {result['avg_price_final']:.0f}&nbsp;USD")
+                            if rank == 1: st.subheader(f"🔻 {result['avg_price_final']:.0f}&nbsp;USD")
+                            if rank == 2: st.subheader(f"🔻 {result['avg_price_final']:.0f}&nbsp;USD")
 
                             result = result.to_dict()
 
@@ -841,24 +856,24 @@ if uploaded_file:
                             **Tržní nákup:** {list(result['market_set'])}
                             """)
 
-                            st.write(f"- Průměrná cena: {result['avg_price_series'][-1]:.2f} USD")
-                            st.write(f"- Celkové BTC: {result['total_btc']:.8f}")
-                            st.write(f"- Celkově vložený kapitál: {result['total_cost']:.2f} USD")
-                            st.write(f"- Počet dnů: {result['days']}")
-                            st.write(f"- Celkový zisk: {result['total_profit']:.2f} USD")
-                            st.write(f"- ROI: {result['ROI']:.2f} %")
-                            st.write(f"- ROI p.a.: {result['ROI_pa']:.2f} %")
-                            st.write(f"- Využití kapitálu: {result['efficiency']:.2f} %")
+                            st.write(f"- Průměrná cena: {result['avg_price_series'][-1]:.2f}&nbsp;USD")
+                            st.write(f"- Celkové množství BTC: {result['total_btc']:.8f}")
+                            st.write(f"- Celkově vložený kapitál: {result['total_cost']:.2f}&nbsp;USD")
+                            st.write(f"- Počet obchodních dnů: {result['days']}")
+                            st.write(f"- Celkový zisk: {result['total_profit']:.2f}&nbsp;USD")
+                            st.write(f"- Výnos (ROI): {result['ROI']:.2f}&nbsp;%")
+                            st.write(f"- Výnos (ROI) p.a.: {result['ROI_pa']:.2f}&nbsp;%")
+                            st.write(f"- Využití kapitálu: {result['efficiency']:.2f}&nbsp;%")
 
                             if result['uninvested_amount'] > 0:
-                                st.write(f"- Neinvestováno: {result['uninvested_amount']:.2f} USD")
+                                st.write(f"- Neinvestováno: {result['uninvested_amount']:.2f}&nbsp;USD")
                             else:
-                                st.write(f"- Přebytečně investováno: {-result['uninvested_amount']:.2f} USD")
+                                st.write(f"- Přebytečně investováno: {-result['uninvested_amount']:.2f}&nbsp;USD")
 
-                            st.write(f"- Celkem: {result['total_amount']:.2f} USD")
+                            st.write(f"- Konečná hodnota investice: {result['total_amount']:.2f}&nbsp;USD")
                             st.write(f"- Naplnění limitních příkazů: {fills}")
-                            st.write(f"- Limit %: {result['percent_limit_invest']:.1f} %")
-                            st.write(f"- Market %: {result['percent_market_invest']:.1f} %")
+                            st.write(f"- Podíl limitních příkazů:  {result['percent_limit_invest']:.1f}&nbsp;%")
+                            st.write(f"- Podíl tržních příkazů: {result['percent_market_invest']:.1f}&nbsp;%")
 
             with tab3a:
                 st.header("Nejlepší strategie podle celkového zisku")
@@ -870,9 +885,9 @@ if uploaded_file:
                 
                 for rank, (_, result) in enumerate(top3.iterrows()):
                       with cols[rank]:
-                            if rank == 0: st.subheader(f"🥇 {result['total_profit']:.0f} USD")
-                            if rank == 1: st.subheader(f"🥈 {result['total_profit']:.0f} USD")
-                            if rank == 2: st.subheader(f"🥉 {result['total_profit']:.0f} USD")
+                            if rank == 0: st.subheader(f"🥇 {result['total_profit']:.0f}&nbsp;USD")
+                            if rank == 1: st.subheader(f"🥈 {result['total_profit']:.0f}&nbsp;USD")
+                            if rank == 2: st.subheader(f"🥉 {result['total_profit']:.0f}&nbsp;USD")
 
                             result = result.to_dict()
 
@@ -887,33 +902,33 @@ if uploaded_file:
                             **Tržní nákup:** {list(result['market_set'])}
                             """)
 
-                            st.write(f"- Průměrná cena: {result['avg_price_series'][-1]:.2f} USD")
-                            st.write(f"- Celkové BTC: {result['total_btc']:.8f}")
-                            st.write(f"- Celkově vložený kapitál: {result['total_cost']:.2f} USD")
-                            st.write(f"- Počet dnů: {result['days']}")
-                            st.write(f"- Celkový zisk: {result['total_profit']:.2f} USD")
-                            st.write(f"- ROI: {result['ROI']:.2f} %")
-                            st.write(f"- ROI p.a.: {result['ROI_pa']:.2f} %")
-                            st.write(f"- Využití kapitálu: {result['efficiency']:.2f} %")
+                            st.write(f"- Průměrná cena: {result['avg_price_series'][-1]:.2f}&nbsp;USD")
+                            st.write(f"- Celkové množství BTC: {result['total_btc']:.8f}")
+                            st.write(f"- Celkově vložený kapitál: {result['total_cost']:.2f}&nbsp;USD")
+                            st.write(f"- Počet obchodních dnů: {result['days']}")
+                            st.write(f"- Celkový zisk: {result['total_profit']:.2f}&nbsp;USD")
+                            st.write(f"- Výnos (ROI): {result['ROI']:.2f}&nbsp;%")
+                            st.write(f"- Výnos (ROI) p.a.: {result['ROI_pa']:.2f}&nbsp;%")
+                            st.write(f"- Využití kapitálu: {result['efficiency']:.2f}&nbsp;%")
 
                             if result['uninvested_amount'] > 0:
-                                st.write(f"- Neinvestováno: {result['uninvested_amount']:.2f} USD")
+                                st.write(f"- Neinvestováno: {result['uninvested_amount']:.2f}&nbsp;USD")
                             else:
-                                st.write(f"- Přebytečně investováno: {-result['uninvested_amount']:.2f} USD")
+                                st.write(f"- Přebytečně investováno: {-result['uninvested_amount']:.2f}&nbsp;USD")
 
-                            st.write(f"- Celkem: {result['total_amount']:.2f} USD")
+                            st.write(f"- Konečná hodnota investice: {result['total_amount']:.2f}&nbsp;USD")
                             st.write(f"- Naplnění limitních příkazů: {fills}")
-                            st.write(f"- Limit %: {result['percent_limit_invest']:.1f} %")
-                            st.write(f"- Market %: {result['percent_market_invest']:.1f} %")
+                            st.write(f"- Podíl limitních příkazů:  {result['percent_limit_invest']:.1f}&nbsp;%")
+                            st.write(f"- Podíl tržních příkazů: {result['percent_market_invest']:.1f}&nbsp;%")
 
                 st.header("Nejhorší strategie podle celkového zisku")
                 cols = st.columns(3)
 
                 for rank, (_, result) in enumerate(bot3.iterrows()):
                       with cols[rank]:
-                            if rank == 0: st.subheader(f"🔻 {result['total_profit']:.0f} USD")
-                            if rank == 1: st.subheader(f"🔻 {result['total_profit']:.0f} USD")
-                            if rank == 2: st.subheader(f"🔻 {result['total_profit']:.0f} USD")
+                            if rank == 0: st.subheader(f"🔻 {result['total_profit']:.0f}&nbsp;USD")
+                            if rank == 1: st.subheader(f"🔻 {result['total_profit']:.0f}&nbsp;USD")
+                            if rank == 2: st.subheader(f"🔻 {result['total_profit']:.0f}&nbsp;USD")
 
                             result = result.to_dict()
 
@@ -928,24 +943,24 @@ if uploaded_file:
                             **Tržní nákup:** {list(result['market_set'])}
                             """)
 
-                            st.write(f"- Průměrná cena: {result['avg_price_series'][-1]:.2f} USD")
-                            st.write(f"- Celkové BTC: {result['total_btc']:.8f}")
-                            st.write(f"- Celkově vložený kapitál: {result['total_cost']:.2f} USD")
-                            st.write(f"- Počet dnů: {result['days']}")
-                            st.write(f"- Celkový zisk: {result['total_profit']:.2f} USD")
-                            st.write(f"- ROI: {result['ROI']:.2f} %")
-                            st.write(f"- ROI p.a.: {result['ROI_pa']:.2f} %")
-                            st.write(f"- Využití kapitálu: {result['efficiency']:.2f} %")
+                            st.write(f"- Průměrná cena: {result['avg_price_series'][-1]:.2f}&nbsp;USD")
+                            st.write(f"- Celkové množství BTC: {result['total_btc']:.8f}")
+                            st.write(f"- Celkově vložený kapitál: {result['total_cost']:.2f}&nbsp;USD")
+                            st.write(f"- Počet obchodních dnů: {result['days']}")
+                            st.write(f"- Celkový zisk: {result['total_profit']:.2f}&nbsp;USD")
+                            st.write(f"- Výnos (ROI): {result['ROI']:.2f}&nbsp;%")
+                            st.write(f"- Výnos (ROI) p.a.: {result['ROI_pa']:.2f}&nbsp;%")
+                            st.write(f"- Využití kapitálu: {result['efficiency']:.2f}&nbsp;%")
 
                             if result['uninvested_amount'] > 0:
-                                st.write(f"- Neinvestováno: {result['uninvested_amount']:.2f} USD")
+                                st.write(f"- Neinvestováno: {result['uninvested_amount']:.2f}&nbsp;USD")
                             else:
-                                st.write(f"- Přebytečně investováno: {-result['uninvested_amount']:.2f} USD")
+                                st.write(f"- Přebytečně investováno: {-result['uninvested_amount']:.2f}&nbsp;USD")
 
-                            st.write(f"- Celkem: {result['total_amount']:.2f} USD")
+                            st.write(f"- Konečná hodnota investice: {result['total_amount']:.2f}&nbsp;USD")
                             st.write(f"- Naplnění limitních příkazů: {fills}")
-                            st.write(f"- Limit %: {result['percent_limit_invest']:.1f} %")
-                            st.write(f"- Market %: {result['percent_market_invest']:.1f} %")
+                            st.write(f"- Podíl limitních příkazů:  {result['percent_limit_invest']:.1f}&nbsp;%")
+                            st.write(f"- Podíl tržních příkazů: {result['percent_market_invest']:.1f}&nbsp;%")
             with tab4a:
                 st.header("Nejlepší strategie podle nakoupeného množství BTC")
                 cols = st.columns(3)
@@ -973,24 +988,24 @@ if uploaded_file:
                             **Tržní nákup:** {list(result['market_set'])}
                             """)
 
-                            st.write(f"- Průměrná cena: {result['avg_price_series'][-1]:.2f} USD")
-                            st.write(f"- Celkové BTC: {result['total_btc']:.8f}")
-                            st.write(f"- Celkově vložený kapitál: {result['total_cost']:.2f} USD")
-                            st.write(f"- Počet dnů: {result['days']}")
-                            st.write(f"- Celkový zisk: {result['total_profit']:.2f} USD")
-                            st.write(f"- ROI: {result['ROI']:.2f} %")
-                            st.write(f"- ROI p.a.: {result['ROI_pa']:.2f} %")
-                            st.write(f"- Využití kapitálu: {result['efficiency']:.2f} %")
+                            st.write(f"- Průměrná cena: {result['avg_price_series'][-1]:.2f}&nbsp;USD")
+                            st.write(f"- Celkové množství BTC: {result['total_btc']:.8f}")
+                            st.write(f"- Celkově vložený kapitál: {result['total_cost']:.2f}&nbsp;USD")
+                            st.write(f"- Počet obchodních dnů: {result['days']}")
+                            st.write(f"- Celkový zisk: {result['total_profit']:.2f}&nbsp;USD")
+                            st.write(f"- Výnos (ROI): {result['ROI']:.2f}&nbsp;%")
+                            st.write(f"- Výnos (ROI) p.a.: {result['ROI_pa']:.2f}&nbsp;%")
+                            st.write(f"- Využití kapitálu: {result['efficiency']:.2f}&nbsp;%")
 
                             if result['uninvested_amount'] > 0:
-                                st.write(f"- Neinvestováno: {result['uninvested_amount']:.2f} USD")
+                                st.write(f"- Neinvestováno: {result['uninvested_amount']:.2f}&nbsp;USD")
                             else:
-                                st.write(f"- Přebytečně investováno: {-result['uninvested_amount']:.2f} USD")
+                                st.write(f"- Přebytečně investováno: {-result['uninvested_amount']:.2f}&nbsp;USD")
 
-                            st.write(f"- Celkem: {result['total_amount']:.2f} USD")
+                            st.write(f"- Konečná hodnota investice: {result['total_amount']:.2f}&nbsp;USD")
                             st.write(f"- Naplnění limitních příkazů: {fills}")
-                            st.write(f"- Limit %: {result['percent_limit_invest']:.1f} %")
-                            st.write(f"- Market %: {result['percent_market_invest']:.1f} %")
+                            st.write(f"- Podíl limitních příkazů:  {result['percent_limit_invest']:.1f}&nbsp;%")
+                            st.write(f"- Podíl tržních příkazů: {result['percent_market_invest']:.1f}&nbsp;%")
 
                 st.header("Nejhorší strategie podle nakoupeného množství BTC")
                 cols = st.columns(3)
@@ -1014,24 +1029,24 @@ if uploaded_file:
                             **Tržní nákup:** {list(result['market_set'])}
                             """)
 
-                            st.write(f"- Průměrná cena: {result['avg_price_series'][-1]:.2f} USD")
-                            st.write(f"- Celkové BTC: {result['total_btc']:.8f}")
-                            st.write(f"- Celkově vložený kapitál: {result['total_cost']:.2f} USD")
-                            st.write(f"- Počet dnů: {result['days']}")
-                            st.write(f"- Celkový zisk: {result['total_profit']:.2f} USD")
-                            st.write(f"- ROI: {result['ROI']:.2f} %")
-                            st.write(f"- ROI p.a.: {result['ROI_pa']:.2f} %")
-                            st.write(f"- Využití kapitálu: {result['efficiency']:.2f} %")
+                            st.write(f"- Průměrná cena: {result['avg_price_series'][-1]:.2f}&nbsp;USD")
+                            st.write(f"- Celkové množství BTC: {result['total_btc']:.8f}")
+                            st.write(f"- Celkově vložený kapitál: {result['total_cost']:.2f}&nbsp;USD")
+                            st.write(f"- Počet obchodních dnů: {result['days']}")
+                            st.write(f"- Celkový zisk: {result['total_profit']:.2f}&nbsp;USD")
+                            st.write(f"- Výnos (ROI): {result['ROI']:.2f}&nbsp;%")
+                            st.write(f"- Výnos (ROI) p.a.: {result['ROI_pa']:.2f}&nbsp;%")
+                            st.write(f"- Využití kapitálu: {result['efficiency']:.2f}&nbsp;%")
 
                             if result['uninvested_amount'] > 0:
-                                st.write(f"- Neinvestováno: {result['uninvested_amount']:.2f} USD")
+                                st.write(f"- Neinvestováno: {result['uninvested_amount']:.2f}&nbsp;USD")
                             else:
-                                st.write(f"- Přebytečně investováno: {-result['uninvested_amount']:.2f} USD")
+                                st.write(f"- Přebytečně investováno: {-result['uninvested_amount']:.2f}&nbsp;USD")
 
-                            st.write(f"- Celkem: {result['total_amount']:.2f} USD")
+                            st.write(f"- Konečná hodnota investice: {result['total_amount']:.2f}&nbsp;USD")
                             st.write(f"- Naplnění limitních příkazů: {fills}")
-                            st.write(f"- Limit %: {result['percent_limit_invest']:.1f} %")
-                            st.write(f"- Market %: {result['percent_market_invest']:.1f} %")
+                            st.write(f"- Podíl limitních příkazů:  {result['percent_limit_invest']:.1f}&nbsp;%")
+                            st.write(f"- Podíl tržních příkazů: {result['percent_market_invest']:.1f}&nbsp;%")
 
             with tab5a:
                 st.header("Nejlepší strategie podle využití kapitálu")
@@ -1043,9 +1058,9 @@ if uploaded_file:
 
                 for rank, (_, result) in enumerate(top3.iterrows()):
                       with cols[rank]:
-                            if rank == 0: st.subheader(f"🥇 {result['efficiency']:.2f} %")
-                            if rank == 1: st.subheader(f"🥈 {result['efficiency']:.2f} %")
-                            if rank == 2: st.subheader(f"🥉 {result['efficiency']:.2f} %")
+                            if rank == 0: st.subheader(f"🥇 {result['efficiency']:.2f}&nbsp;%")
+                            if rank == 1: st.subheader(f"🥈 {result['efficiency']:.2f}&nbsp;%")
+                            if rank == 2: st.subheader(f"🥉 {result['efficiency']:.2f}&nbsp;%")
 
                             result = result.to_dict()
 
@@ -1060,33 +1075,33 @@ if uploaded_file:
                             **Tržní nákup:** {list(result['market_set'])}
                             """)
 
-                            st.write(f"- Průměrná cena: {result['avg_price_series'][-1]:.2f} USD")
-                            st.write(f"- Celkové BTC: {result['total_btc']:.8f}")
-                            st.write(f"- Celkově vložený kapitál: {result['total_cost']:.2f} USD")
-                            st.write(f"- Počet dnů: {result['days']}")
-                            st.write(f"- Celkový zisk: {result['total_profit']:.2f} USD")
-                            st.write(f"- ROI: {result['ROI']:.2f} %")
-                            st.write(f"- ROI p.a.: {result['ROI_pa']:.2f} %")
-                            st.write(f"- Využití kapitálu: {result['efficiency']:.2f} %")
+                            st.write(f"- Průměrná cena: {result['avg_price_series'][-1]:.2f}&nbsp;USD")
+                            st.write(f"- Celkové množství BTC: {result['total_btc']:.8f}")
+                            st.write(f"- Celkově vložený kapitál: {result['total_cost']:.2f}&nbsp;USD")
+                            st.write(f"- Počet obchodních dnů: {result['days']}")
+                            st.write(f"- Celkový zisk: {result['total_profit']:.2f}&nbsp;USD")
+                            st.write(f"- Výnos (ROI): {result['ROI']:.2f}&nbsp;%")
+                            st.write(f"- Výnos (ROI) p.a.: {result['ROI_pa']:.2f}&nbsp;%")
+                            st.write(f"- Využití kapitálu: {result['efficiency']:.2f}&nbsp;%")
 
                             if result['uninvested_amount'] > 0:
-                                st.write(f"- Neinvestováno: {result['uninvested_amount']:.2f} USD")
+                                st.write(f"- Neinvestováno: {result['uninvested_amount']:.2f}&nbsp;USD")
                             else:
-                                st.write(f"- Přebytečně investováno: {-result['uninvested_amount']:.2f} USD")
+                                st.write(f"- Přebytečně investováno: {-result['uninvested_amount']:.2f}&nbsp;USD")
 
-                            st.write(f"- Celkem: {result['total_amount']:.2f} USD")
+                            st.write(f"- Konečná hodnota investice: {result['total_amount']:.2f}&nbsp;USD")
                             st.write(f"- Naplnění limitních příkazů: {fills}")
-                            st.write(f"- Limit %: {result['percent_limit_invest']:.1f} %")
-                            st.write(f"- Market %: {result['percent_market_invest']:.1f} %")
+                            st.write(f"- Podíl limitních příkazů:  {result['percent_limit_invest']:.1f}&nbsp;%")
+                            st.write(f"- Podíl tržních příkazů: {result['percent_market_invest']:.1f}&nbsp;%")
 
                 st.header("Nejhorší strategie podle využití kapitálu")
                 cols = st.columns(3)
 
                 for rank, (_, result) in enumerate(bot3.iterrows()):
                       with cols[rank]:
-                            if rank == 0: st.subheader(f"🔻 {result['efficiency']:.2f} %")
-                            if rank == 1: st.subheader(f"🔻 {result['efficiency']:.2f} %")
-                            if rank == 2: st.subheader(f"🔻 {result['efficiency']:.2f} %")
+                            if rank == 0: st.subheader(f"🔻 {result['efficiency']:.2f}&nbsp;%")
+                            if rank == 1: st.subheader(f"🔻 {result['efficiency']:.2f}&nbsp;%")
+                            if rank == 2: st.subheader(f"🔻 {result['efficiency']:.2f}&nbsp;%")
 
                             result = result.to_dict()
 
@@ -1101,24 +1116,24 @@ if uploaded_file:
                             **Tržní nákup:** {list(result['market_set'])}
                             """)
 
-                            st.write(f"- Průměrná cena: {result['avg_price_series'][-1]:.2f} USD")
-                            st.write(f"- Celkové BTC: {result['total_btc']:.8f}")
-                            st.write(f"- Celkově vložený kapitál: {result['total_cost']:.2f} USD")
-                            st.write(f"- Počet dnů: {result['days']}")
-                            st.write(f"- Celkový zisk: {result['total_profit']:.2f} USD")
-                            st.write(f"- ROI: {result['ROI']:.2f} %")
-                            st.write(f"- ROI p.a.: {result['ROI_pa']:.2f} %")
-                            st.write(f"- Využití kapitálu: {result['efficiency']:.2f} %")
+                            st.write(f"- Průměrná cena: {result['avg_price_series'][-1]:.2f}&nbsp;USD")
+                            st.write(f"- Celkové množství BTC: {result['total_btc']:.8f}")
+                            st.write(f"- Celkově vložený kapitál: {result['total_cost']:.2f}&nbsp;USD")
+                            st.write(f"- Počet obchodních dnů: {result['days']}")
+                            st.write(f"- Celkový zisk: {result['total_profit']:.2f}&nbsp;USD")
+                            st.write(f"- Výnos (ROI): {result['ROI']:.2f}&nbsp;%")
+                            st.write(f"- Výnos (ROI) p.a.: {result['ROI_pa']:.2f}&nbsp;%")
+                            st.write(f"- Využití kapitálu: {result['efficiency']:.2f}&nbsp;%")
 
                             if result['uninvested_amount'] > 0:
-                                st.write(f"- Neinvestováno: {result['uninvested_amount']:.2f} USD")
+                                st.write(f"- Neinvestováno: {result['uninvested_amount']:.2f}&nbsp;USD")
                             else:
-                                st.write(f"- Přebytečně investováno: {-result['uninvested_amount']:.2f} USD")
+                                st.write(f"- Přebytečně investováno: {-result['uninvested_amount']:.2f}&nbsp;USD")
 
-                            st.write(f"- Celkem: {result['total_amount']:.2f} USD")
+                            st.write(f"- Konečná hodnota investice: {result['total_amount']:.2f}&nbsp;USD")
                             st.write(f"- Naplnění limitních příkazů: {fills}")
-                            st.write(f"- Limit %: {result['percent_limit_invest']:.1f} %")
-                            st.write(f"- Market %: {result['percent_market_invest']:.1f} %")
+                            st.write(f"- Podíl limitních příkazů:  {result['percent_limit_invest']:.1f}&nbsp;%")
+                            st.write(f"- Podíl tržních příkazů: {result['percent_market_invest']:.1f}&nbsp;%")
         else:
             st.write("Nenalezen žádný validní výsledek. Zkontrolujte součet vah a formát dat.")
 st.write("---")
@@ -1137,12 +1152,12 @@ median_daily_invest = np.median(adjusted_investments)
 median_monthly_invest = median_daily_invest * 30
 
 # st.write("## 📈 Statistika BTFD indikátoru a multiplikátoru")
-# st.write(f"- Průměrná hodnota BTFD indikátoru: {mean_btfd:.2f} %")
+# st.write(f"- Průměrná hodnota BTFD indikátoru: {mean_btfd:.2f}&nbsp;%")
 # st.write(f"- Průměrná hodnota multiplikátoru: {mean_multiplier:.3f}×")
-# st.write(f"- Odpovídající průměrná denní investice: {mean_multiplier * INVEST_PER_DAY:.2f} USD")
-# st.write(f"- Odpovídající průměrná měsíční investice (30 dní): {mean_multiplier * INVEST_PER_DAY * 30:.2f} USD")
-# st.write(f"- Medián denní investice: {median_daily_invest:.2f} USD")
-# st.write(f"- Medián měsíční investice: {median_monthly_invest:.2f} USD")
+# st.write(f"- Odpovídající průměrná denní investice: {mean_multiplier * INVEST_PER_DAY:.2f}&nbsp;USD")
+# st.write(f"- Odpovídající průměrná měsíční investice (30 dní): {mean_multiplier * INVEST_PER_DAY * 30:.2f}&nbsp;USD")
+# st.write(f"- Medián denní investice: {median_daily_invest:.2f}&nbsp;USD")
+# st.write(f"- Medián měsíční investice: {median_monthly_invest:.2f}&nbsp;USD")
 
 end = time.time()
 
