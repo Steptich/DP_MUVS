@@ -610,7 +610,7 @@ def render_sequence(col, seq_number):
             # Pokud máme předchozí hodnotu a změnilo se téma, použijeme ji
             slider_value = prev_weights[i]
             w = st.slider(
-                f"Pokles o {lvl} %",
+                f"Pokles o {lvl}&nbsp;%",
                 min_value=0.0,
                 max_value=1.0,
                 step=0.05,
@@ -641,7 +641,7 @@ def render_sequence(col, seq_number):
             # checkbox se zobrazuje jen pokud váha > 0
             if weights[i] > 0:
                 checked = st.checkbox(
-                    f"Tržní příkaz pro limit {lvl} %",
+                    f"Tržní příkaz pro limit {lvl}&nbsp;%",
                     key=checkbox_key
                 )
                 if checked:
@@ -724,7 +724,7 @@ if results_1 and results_2:
             )
         )
 
-        btfd_fig.add_hline(y=BTFD_MIN, line_dash="dash", line_color="#F7931A", annotation_text=f"{BTFD_MIN} %",
+        btfd_fig.add_hline(y=BTFD_MIN, line_dash="dash", line_color="#F7931A", annotation_text=f"{BTFD_MIN}&nbsp;%",
                            annotation_position="bottom right")
         btfd_fig.add_hline(y=0.0, line_dash="dash", line_color="#F7931A", annotation_text=f"0 %",
                            annotation_position="top right")
@@ -835,7 +835,7 @@ if results_1 and results_2:
         )
 
         buy_fig.add_hline(y=INVEST_PER_DAY, line_dash="dash", line_color="#F7931A",
-                          annotation_text=f"Fixní investice: {INVEST_PER_DAY} USD", annotation_position="bottom right")
+                          annotation_text=f"Fixní investice: {INVEST_PER_DAY}&nbsp;USD", annotation_position="bottom right")
 
         buy_fig.update_xaxes(
             tickformat="%d.%m.%Y",  # formát osy
@@ -894,7 +894,7 @@ if results_1 and results_2:
                 y=INVEST_PER_DAY * np.arange(len(df_btfd_plot_1)),
                 mode="lines",
                 line=dict(color="#F7931A", dash="dash", width=1.5),
-                name=f"Fixní investice: {INVEST_PER_DAY} USD",
+                name=f"Fixní investice: {INVEST_PER_DAY}&nbsp;USD",
                 customdata=btc_thinned['date_cz'],
                 hovertemplate="<b>Celkově investováno (fixní částka):</b> %{y:.2f} USD<br><b>Datum:</b> %{customdata}<extra></extra>"
             )
@@ -1191,43 +1191,43 @@ if results_1 and results_2:
         st.subheader("Strategie 1")
         fills = {k: round(float(v) * 100, 1) for k, v in results_1[0]['avg_fill_rate'].items()}
         st.write(f" Váhy: {list(results_1[0]['weights'])}, **Tržní nákup:** {list(results_1[0]['market_buy_for'])}")
-        st.write(f"- Průměrná nákupní cena: {results_1[0]['avg_price_series'][-1]:.2f} USD")
+        st.write(f"- Průměrná nákupní cena: {results_1[0]['avg_price_series'][-1]:.2f}&nbsp;USD")
         st.write(f"- Celkové množství BTC: {results_1[0]['total_btc']:.8f}")
-        st.write(f"- Celkově vložený kapitál: {results_1[0]['total_cost']:.2f} USD")
+        st.write(f"- Celkově vložený kapitál: {results_1[0]['total_cost']:.2f}&nbsp;USD")
         st.write(f"- Počet obchodních dnů: {results_1[0]['days']}")
-        st.write(f"- Celkový zisk: {results_1[0]['total_profit']:.2f} USD")
-        st.write(f"- Výnos (ROI): {results_1[0]['ROI']:.2f} %")
-        st.write(f"- Výnos (ROI) p.a.: {results_1[0]['ROI_pa']:.2f} %")
-        st.write(f"- Využití kapitálu: {results_1[0]['efficiency']:.2f} %")
+        st.write(f"- Celkový zisk: {results_1[0]['total_profit']:.2f}&nbsp;USD")
+        st.write(f"- Výnos (ROI): {results_1[0]['ROI']:.2f}&nbsp;%")
+        st.write(f"- Výnos (ROI) p.a.: {results_1[0]['ROI_pa']:.2f}&nbsp;%")
+        st.write(f"- Využití kapitálu: {results_1[0]['efficiency']:.2f}&nbsp;%")
         if results_1[0]['uninvested_amount'] > 0:
-            st.write(f"- Neinvestováno: {results_1[0]['uninvested_amount']:.2f} USD")
+            st.write(f"- Neinvestováno: {results_1[0]['uninvested_amount']:.2f}&nbsp;USD")
         else:
-            st.write(f"- Přebytečně investováno: {-results_1[0]['uninvested_amount']:.2f} USD")
-        st.write(f"- Konečná hodnota investice: {results_1[0]['total_amount']:.2f} USD")
+            st.write(f"- Přebytečně investováno: {-results_1[0]['uninvested_amount']:.2f}&nbsp;USD")
+        st.write(f"- Konečná hodnota investice: {results_1[0]['total_amount']:.2f}&nbsp;USD")
         st.write(f"- Naplňění limitných příkazů: {fills}")
-        st.write(f"- Podíl limitních příkazů: {results_1[0]['percent_limit_invest']:.1f} %")
-        st.write(f"- Podíl tržních příkazů: {results_1[0]['percent_market_invest']:.1f} %")
+        st.write(f"- Podíl limitních příkazů: {results_1[0]['percent_limit_invest']:.1f}&nbsp;%")
+        st.write(f"- Podíl tržních příkazů: {results_1[0]['percent_market_invest']:.1f}&nbsp;%")
 
     with col2b:
         st.subheader("Strategie 2")
         fills = {k: round(float(v) * 100, 1) for k, v in results_2[0]['avg_fill_rate'].items()}
         st.write(f" Váhy: {list(results_2[0]['weights'])}, **Tržní nákup:** {list(results_2[0]['market_buy_for'])}")
-        st.write(f"- Průměrná cena: {results_2[0]['avg_price_series'][-1]:.2f} USD")
+        st.write(f"- Průměrná cena: {results_2[0]['avg_price_series'][-1]:.2f}&nbsp;USD")
         st.write(f"- Celkové množství BTC: {results_2[0]['total_btc']:.8f}")
-        st.write(f"- Celkově vložený kapitál: {results_2[0]['total_cost']:.2f} USD")
+        st.write(f"- Celkově vložený kapitál: {results_2[0]['total_cost']:.2f}&nbsp;USD")
         st.write(f"- Počet obchodních dnů: {results_2[0]['days']}")
-        st.write(f"- Celkový zisk: {results_2[0]['total_profit']:.2f} USD")
-        st.write(f"- Výnos (ROI): {results_2[0]['ROI']:.2f} %")
-        st.write(f"- Výnos (ROI) p.a.: {results_2[0]['ROI_pa']:.2f} %")
-        st.write(f"- Využití kapitálu: {results_2[0]['efficiency']:.2f} %")
+        st.write(f"- Celkový zisk: {results_2[0]['total_profit']:.2f}&nbsp;USD")
+        st.write(f"- Výnos (ROI): {results_2[0]['ROI']:.2f}&nbsp;%")
+        st.write(f"- Výnos (ROI) p.a.: {results_2[0]['ROI_pa']:.2f}&nbsp;%")
+        st.write(f"- Využití kapitálu: {results_2[0]['efficiency']:.2f}&nbsp;%")
         if results_2[0]['uninvested_amount'] > 0:
-            st.write(f"- Neinvestováno: {results_2[0]['uninvested_amount']:.2f} USD")
+            st.write(f"- Neinvestováno: {results_2[0]['uninvested_amount']:.2f}&nbsp;USD")
         else:
-            st.write(f"- Přebytečně investováno: {-results_2[0]['uninvested_amount']:.2f} USD")
-        st.write(f"- Konečná hodnota investice: {results_2[0]['total_amount']:.2f} USD")
+            st.write(f"- Přebytečně investováno: {-results_2[0]['uninvested_amount']:.2f}&nbsp;USD")
+        st.write(f"- Konečná hodnota investice: {results_2[0]['total_amount']:.2f}&nbsp;USD")
         st.write(f"- Naplňění limitných příkazů: {fills}")
-        st.write(f"- Podíl limitních příkazů: {results_2[0]['percent_limit_invest']:.1f} %")
-        st.write(f"- Podíl tržních příkazů: {results_2[0]['percent_market_invest']:.1f} %")
+        st.write(f"- Podíl limitních příkazů: {results_2[0]['percent_limit_invest']:.1f}&nbsp;%")
+        st.write(f"- Podíl tržních příkazů: {results_2[0]['percent_market_invest']:.1f}&nbsp;%")
 
 else:
     st.warning("Neplatné nastavení vah. Upravte váhy tak, aby jejich součet byl přesně roven 1.00.")    
@@ -1246,12 +1246,12 @@ median_daily_invest = np.median(adjusted_investments)
 median_monthly_invest = median_daily_invest * 30
 
 # st.write("## 📈 Statistika BTFD indikátoru a multiplikátoru")
-# st.write(f"- Průměrná hodnota BTFD indikátoru: {mean_btfd:.2f} %")
+# st.write(f"- Průměrná hodnota BTFD indikátoru: {mean_btfd:.2f}&nbsp;%")
 # st.write(f"- Průměrná hodnota multiplikátoru: {mean_multiplier:.3f}×")
-# st.write(f"- Odpovídající průměrná denní investice: {mean_multiplier * INVEST_PER_DAY:.2f} USD")
-# st.write(f"- Odpovídající průměrná měsíční investice (30 dní): {mean_multiplier * INVEST_PER_DAY * 30:.2f} USD")
-# st.write(f"- Medián denní investice: {median_daily_invest:.2f} USD")
-# st.write(f"- Medián měsíční investice: {median_monthly_invest:.2f} USD")
+# st.write(f"- Odpovídající průměrná denní investice: {mean_multiplier * INVEST_PER_DAY:.2f}&nbsp;USD")
+# st.write(f"- Odpovídající průměrná měsíční investice (30 dní): {mean_multiplier * INVEST_PER_DAY * 30:.2f}&nbsp;USD")
+# st.write(f"- Medián denní investice: {median_daily_invest:.2f}&nbsp;USD")
+# st.write(f"- Medián měsíční investice: {median_monthly_invest:.2f}&nbsp;USD")
 
 end = time.time()
 
