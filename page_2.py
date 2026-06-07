@@ -564,7 +564,7 @@ def simulate_configuration(
         "days": count_days,
         "total_profit": total_btc * last_price - total_cost,
         "ROI": (total_btc * last_price - total_cost) / total_cost * 100,
-        "ROI_pa": (((total_btc * last_price) / total_cost) ** (1 / (count_days / 365)) - 1) * 100,
+        "CAGR": (((total_btc * last_price) / total_cost) ** (1 / (count_days / 365)) - 1) * 100,
         "efficiency": total_cost / (count_days * invest) * 100,
         "uninvested_amount": count_days * invest - total_cost,
         "total_amount": total_btc * last_price + abs(count_days * invest - total_cost),
@@ -1197,7 +1197,7 @@ if results_1 and results_2:
         st.write(f"- Počet obchodních dnů: {results_1[0]['days']}")
         st.write(f"- Celkový zisk: {results_1[0]['total_profit']:.2f}&nbsp;USD")
         st.write(f"- Výnos (ROI): {results_1[0]['ROI']:.2f}&nbsp;%")
-        st.write(f"- Výnos (ROI) p.a.: {results_1[0]['ROI_pa']:.2f}&nbsp;%")
+        st.write(f"- Výnos p.a. (CAGR): {results_1[0]['CAGR']:.2f}&nbsp;%")
         st.write(f"- Využití kapitálu: {results_1[0]['efficiency']:.2f}&nbsp;%")
         if results_1[0]['uninvested_amount'] > 0:
             st.write(f"- Neinvestováno: {results_1[0]['uninvested_amount']:.2f}&nbsp;USD")
@@ -1218,7 +1218,7 @@ if results_1 and results_2:
         st.write(f"- Počet obchodních dnů: {results_2[0]['days']}")
         st.write(f"- Celkový zisk: {results_2[0]['total_profit']:.2f}&nbsp;USD")
         st.write(f"- Výnos (ROI): {results_2[0]['ROI']:.2f}&nbsp;%")
-        st.write(f"- Výnos (ROI) p.a.: {results_2[0]['ROI_pa']:.2f}&nbsp;%")
+        st.write(f"- Výnos p.a. (CAGR): {results_2[0]['CAGR']:.2f}&nbsp;%")
         st.write(f"- Využití kapitálu: {results_2[0]['efficiency']:.2f}&nbsp;%")
         if results_2[0]['uninvested_amount'] > 0:
             st.write(f"- Neinvestováno: {results_2[0]['uninvested_amount']:.2f}&nbsp;USD")
