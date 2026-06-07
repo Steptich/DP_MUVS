@@ -553,7 +553,7 @@ def simulate_configuration(
         "days": count_days,
         "total_profit": total_btc * last_price - total_cost,
         "ROI": (total_btc * last_price - total_cost) / total_cost * 100,
-        "ROI_pa": (((total_btc * last_price) / total_cost) ** (1 / (count_days / 365)) - 1) * 100,
+        "CAGR": (((total_btc * last_price) / total_cost) ** (1 / (count_days / 365)) - 1) * 100,
         "efficiency": total_cost / (count_days * invest) * 100,
         "uninvested_amount": count_days * invest - total_cost,
         "total_amount": total_btc * last_price + abs(count_days * invest - total_cost),
@@ -735,7 +735,7 @@ if uploaded_file:
                             st.write(f"- Počet obchodních dnů: {result['days']}")
                             st.write(f"- Celkový zisk: {result['total_profit']:.2f}&nbsp;USD")
                             st.write(f"- Výnos (ROI): {result['ROI']:.2f}&nbsp;%")
-                            st.write(f"- Výnos (ROI) p.a.: {result['ROI_pa']:.2f}&nbsp;%")
+                            st.write(f"- Výnos p.a. (CAGR).: {result['CAGR']:.2f}&nbsp;%")
                             st.write(f"- Využití kapitálu: {result['efficiency']:.2f}&nbsp;%")
 
                             if result['uninvested_amount'] > 0:
@@ -776,7 +776,7 @@ if uploaded_file:
                             st.write(f"- Počet obchodních dnů: {result['days']}")
                             st.write(f"- Celkový zisk: {result['total_profit']:.2f}&nbsp;USD")
                             st.write(f"- Výnos (ROI): {result['ROI']:.2f}&nbsp;%")
-                            st.write(f"- Výnos (ROI) p.a.: {result['ROI_pa']:.2f}&nbsp;%")
+                            st.write(f"- Výnos p.a. (CAGR).: {result['CAGR']:.2f}&nbsp;%")
                             st.write(f"- Využití kapitálu: {result['efficiency']:.2f}&nbsp;%")
 
                             if result['uninvested_amount'] > 0:
@@ -821,7 +821,7 @@ if uploaded_file:
                             st.write(f"- Počet obchodních dnů: {result['days']}")
                             st.write(f"- Celkový zisk: {result['total_profit']:.2f}&nbsp;USD")
                             st.write(f"- Výnos (ROI): {result['ROI']:.2f}&nbsp;%")
-                            st.write(f"- Výnos (ROI) p.a.: {result['ROI_pa']:.2f}&nbsp;%")
+                            st.write(f"- Výnos p.a. (CAGR).: {result['CAGR']:.2f}&nbsp;%")
                             st.write(f"- Využití kapitálu: {result['efficiency']:.2f}&nbsp;%")
 
                             if result['uninvested_amount'] > 0:
@@ -862,7 +862,7 @@ if uploaded_file:
                             st.write(f"- Počet obchodních dnů: {result['days']}")
                             st.write(f"- Celkový zisk: {result['total_profit']:.2f}&nbsp;USD")
                             st.write(f"- Výnos (ROI): {result['ROI']:.2f}&nbsp;%")
-                            st.write(f"- Výnos (ROI) p.a.: {result['ROI_pa']:.2f}&nbsp;%")
+                            st.write(f"- Výnos p.a. (CAGR).: {result['CAGR']:.2f}&nbsp;%")
                             st.write(f"- Využití kapitálu: {result['efficiency']:.2f}&nbsp;%")
 
                             if result['uninvested_amount'] > 0:
@@ -908,7 +908,7 @@ if uploaded_file:
                             st.write(f"- Počet obchodních dnů: {result['days']}")
                             st.write(f"- Celkový zisk: {result['total_profit']:.2f}&nbsp;USD")
                             st.write(f"- Výnos (ROI): {result['ROI']:.2f}&nbsp;%")
-                            st.write(f"- Výnos (ROI) p.a.: {result['ROI_pa']:.2f}&nbsp;%")
+                            st.write(f"- Výnos p.a. (CAGR).: {result['CAGR']:.2f}&nbsp;%")
                             st.write(f"- Využití kapitálu: {result['efficiency']:.2f}&nbsp;%")
 
                             if result['uninvested_amount'] > 0:
@@ -949,7 +949,7 @@ if uploaded_file:
                             st.write(f"- Počet obchodních dnů: {result['days']}")
                             st.write(f"- Celkový zisk: {result['total_profit']:.2f}&nbsp;USD")
                             st.write(f"- Výnos (ROI): {result['ROI']:.2f}&nbsp;%")
-                            st.write(f"- Výnos (ROI) p.a.: {result['ROI_pa']:.2f}&nbsp;%")
+                            st.write(f"- Výnos p.a. (CAGR).: {result['CAGR']:.2f}&nbsp;%")
                             st.write(f"- Využití kapitálu: {result['efficiency']:.2f}&nbsp;%")
 
                             if result['uninvested_amount'] > 0:
@@ -994,7 +994,7 @@ if uploaded_file:
                             st.write(f"- Počet obchodních dnů: {result['days']}")
                             st.write(f"- Celkový zisk: {result['total_profit']:.2f}&nbsp;USD")
                             st.write(f"- Výnos (ROI): {result['ROI']:.2f}&nbsp;%")
-                            st.write(f"- Výnos (ROI) p.a.: {result['ROI_pa']:.2f}&nbsp;%")
+                            st.write(f"- Výnos p.a. (CAGR).: {result['CAGR']:.2f}&nbsp;%")
                             st.write(f"- Využití kapitálu: {result['efficiency']:.2f}&nbsp;%")
 
                             if result['uninvested_amount'] > 0:
@@ -1035,7 +1035,7 @@ if uploaded_file:
                             st.write(f"- Počet obchodních dnů: {result['days']}")
                             st.write(f"- Celkový zisk: {result['total_profit']:.2f}&nbsp;USD")
                             st.write(f"- Výnos (ROI): {result['ROI']:.2f}&nbsp;%")
-                            st.write(f"- Výnos (ROI) p.a.: {result['ROI_pa']:.2f}&nbsp;%")
+                            st.write(f"- Výnos p.a. (CAGR).: {result['CAGR']:.2f}&nbsp;%")
                             st.write(f"- Využití kapitálu: {result['efficiency']:.2f}&nbsp;%")
 
                             if result['uninvested_amount'] > 0:
@@ -1081,7 +1081,7 @@ if uploaded_file:
                             st.write(f"- Počet obchodních dnů: {result['days']}")
                             st.write(f"- Celkový zisk: {result['total_profit']:.2f}&nbsp;USD")
                             st.write(f"- Výnos (ROI): {result['ROI']:.2f}&nbsp;%")
-                            st.write(f"- Výnos (ROI) p.a.: {result['ROI_pa']:.2f}&nbsp;%")
+                            st.write(f"- Výnos p.a. (CAGR).: {result['CAGR']:.2f}&nbsp;%")
                             st.write(f"- Využití kapitálu: {result['efficiency']:.2f}&nbsp;%")
 
                             if result['uninvested_amount'] > 0:
@@ -1122,7 +1122,7 @@ if uploaded_file:
                             st.write(f"- Počet obchodních dnů: {result['days']}")
                             st.write(f"- Celkový zisk: {result['total_profit']:.2f}&nbsp;USD")
                             st.write(f"- Výnos (ROI): {result['ROI']:.2f}&nbsp;%")
-                            st.write(f"- Výnos (ROI) p.a.: {result['ROI_pa']:.2f}&nbsp;%")
+                            st.write(f"- Výnos p.a. (CAGR).: {result['CAGR']:.2f}&nbsp;%")
                             st.write(f"- Využití kapitálu: {result['efficiency']:.2f}&nbsp;%")
 
                             if result['uninvested_amount'] > 0:
