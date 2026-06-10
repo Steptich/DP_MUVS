@@ -725,7 +725,7 @@ if uploaded_file:
 
                             st.write(f"""
                             Strategie č. {result['sequence']}  
-                            Váhy: {list(result['weights'])}  
+                            Váhy: {[round(float(x), 2) for x in result['weights']]}  
                             **Tržní nákup:** {list(result['market_set'])}
                             """)
 
@@ -766,7 +766,7 @@ if uploaded_file:
 
                             st.write(f"""
                             Strategie č. {result['sequence']}  
-                            Váhy: {list(result['weights'])}  
+                            Váhy: {[round(float(x), 2) for x in result['weights']]}  
                             **Tržní nákup:** {list(result['market_set'])}
                             """)
 
@@ -811,7 +811,7 @@ if uploaded_file:
 
                             st.write(f"""
                             Strategie č. {result['sequence']}  
-                            Váhy: {list(result['weights'])}  
+                            Váhy: {[round(float(x), 2) for x in result['weights']]}  
                             **Tržní nákup:** {list(result['market_set'])}
                             """)
 
@@ -852,7 +852,7 @@ if uploaded_file:
 
                             st.write(f"""
                             Strategie č. {result['sequence']}  
-                            Váhy: {list(result['weights'])}  
+                            Váhy: {[round(float(x), 2) for x in result['weights']]}  
                             **Tržní nákup:** {list(result['market_set'])}
                             """)
 
@@ -898,7 +898,7 @@ if uploaded_file:
 
                             st.write(f"""
                             Strategie č. {result['sequence']}  
-                            Váhy: {list(result['weights'])}  
+                            Váhy: {[round(float(x), 2) for x in result['weights']]}  
                             **Tržní nákup:** {list(result['market_set'])}
                             """)
 
@@ -939,7 +939,7 @@ if uploaded_file:
 
                             st.write(f"""
                             Strategie č. {result['sequence']}  
-                            Váhy: {list(result['weights'])}  
+                            Váhy: {[round(float(x), 2) for x in result['weights']]}  
                             **Tržní nákup:** {list(result['market_set'])}
                             """)
 
@@ -984,7 +984,7 @@ if uploaded_file:
 
                             st.write(f"""
                             Strategie č. {result['sequence']}  
-                            Váhy: {list(result['weights'])}  
+                            Váhy: {[round(float(x), 2) for x in result['weights']]}  
                             **Tržní nákup:** {list(result['market_set'])}
                             """)
 
@@ -1025,7 +1025,7 @@ if uploaded_file:
 
                             st.write(f"""
                             Strategie č. {result['sequence']}  
-                            Váhy: {list(result['weights'])}  
+                            Váhy: {[round(float(x), 2) for x in result['weights']]}  
                             **Tržní nákup:** {list(result['market_set'])}
                             """)
 
@@ -1071,7 +1071,7 @@ if uploaded_file:
 
                             st.write(f"""
                             Strategie č. {result['sequence']}  
-                            Váhy: {list(result['weights'])}  
+                            Váhy: {[round(float(x), 2) for x in result['weights']]}  
                             **Tržní nákup:** {list(result['market_set'])}
                             """)
 
@@ -1112,7 +1112,7 @@ if uploaded_file:
 
                             st.write(f"""
                             Strategie č. {result['sequence']}  
-                            Váhy: {list(result['weights'])}  
+                            Váhy: {[round(float(x), 2) for x in result['weights']]}  
                             **Tržní nákup:** {list(result['market_set'])}
                             """)
 
