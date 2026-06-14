@@ -589,7 +589,7 @@ st.markdown("""
             Pro porovnání strategií nahrajte CSV nebo XLSX soubor, který bude obsahovat váhy pro 
             jednotlivé úrovně korekce (jako první řádek je hlavička s sloupci `lvl_0`, `lvl_1`, ..., `lvl_5`).
             Každý další řádek v souboru bude reprezentovat jednu strategii, přičemž váhy musí být v rozsahu 0–1 
-            a jejich součet musí být roven 1.Po nahrání souboru se zobrazí tabulka s načtenými váhami a následně 
+            a jejich součet musí být roven 1. Po nahrání souboru se zobrazí tabulka s načtenými váhami a následně 
             se spustí backtest pro každou strategii přes všechny možné kombinace tržních nákupů, které odpovídají zadaným váhám.
             
             Ukázka správného formátu:""",text_alignment="justify")
@@ -696,6 +696,7 @@ if uploaded_file:
                 for r in seq["results"]
             ]
         )
+        df["weights"] = df["weights"].apply(lambda x: [round(float(i), 2) for i in x])
 
 
         if not df.empty:
@@ -703,7 +704,7 @@ if uploaded_file:
             tab1a, tab2a, tab3a, tab4a, tab5a = st.tabs(["Procentuální zhodnocení", "Průměrná nákupní cena", "Celkový zisk", "Nakoupené množství BTC", "Využití kapitálu"])
 
             with tab1a:
-                st.header("Nejlepší strategie podle ROI (%)")
+                st.subheader("Nejlepší strategie podle ROI (%)")
                 cols = st.columns(3)
 
 
@@ -748,7 +749,7 @@ if uploaded_file:
                             st.write(f"- Podíl limitních příkazů:  {result['percent_limit_invest']:.1f}&nbsp;%")
                             st.write(f"- Podíl tržních příkazů: {result['percent_market_invest']:.1f}&nbsp;%")
 
-                st.header("Nejhorší strategie podle ROI (%)")
+                st.subheader("Nejhorší strategie podle ROI (%)")
                 cols = st.columns(3)
 
                 for rank, (_, result) in enumerate(bot3.iterrows()):
@@ -790,7 +791,7 @@ if uploaded_file:
                             st.write(f"- Podíl tržních příkazů: {result['percent_market_invest']:.1f}&nbsp;%")
             
             with tab2a:
-                st.header("Nejlepší strategie podle průměrné nákupní ceny")
+                st.subheader("Nejlepší strategie podle průměrné nákupní ceny")
                 cols = st.columns(3)
                 df["avg_price_final"] = df["total_cost"] / df["total_btc"]
 
@@ -834,7 +835,7 @@ if uploaded_file:
                             st.write(f"- Podíl limitních příkazů:  {result['percent_limit_invest']:.1f}&nbsp;%")
                             st.write(f"- Podíl tržních příkazů: {result['percent_market_invest']:.1f}&nbsp;%")
 
-                st.header("Nejhorší strategie podle průměrné nákupní ceny")
+                st.subheader("Nejhorší strategie podle průměrné nákupní ceny")
                 cols = st.columns(3)
 
                 for rank, (_, result) in enumerate(bot3.iterrows()):
@@ -876,7 +877,7 @@ if uploaded_file:
                             st.write(f"- Podíl tržních příkazů: {result['percent_market_invest']:.1f}&nbsp;%")
 
             with tab3a:
-                st.header("Nejlepší strategie podle celkového zisku")
+                st.subheader("Nejlepší strategie podle celkového zisku")
                 cols = st.columns(3)
                 
 
@@ -921,7 +922,7 @@ if uploaded_file:
                             st.write(f"- Podíl limitních příkazů:  {result['percent_limit_invest']:.1f}&nbsp;%")
                             st.write(f"- Podíl tržních příkazů: {result['percent_market_invest']:.1f}&nbsp;%")
 
-                st.header("Nejhorší strategie podle celkového zisku")
+                st.subheader("Nejhorší strategie podle celkového zisku")
                 cols = st.columns(3)
 
                 for rank, (_, result) in enumerate(bot3.iterrows()):
@@ -962,7 +963,7 @@ if uploaded_file:
                             st.write(f"- Podíl limitních příkazů:  {result['percent_limit_invest']:.1f}&nbsp;%")
                             st.write(f"- Podíl tržních příkazů: {result['percent_market_invest']:.1f}&nbsp;%")
             with tab4a:
-                st.header("Nejlepší strategie podle nakoupeného množství BTC")
+                st.subheader("Nejlepší strategie podle nakoupeného množství BTC")
                 cols = st.columns(3)
 
 
@@ -1007,7 +1008,7 @@ if uploaded_file:
                             st.write(f"- Podíl limitních příkazů:  {result['percent_limit_invest']:.1f}&nbsp;%")
                             st.write(f"- Podíl tržních příkazů: {result['percent_market_invest']:.1f}&nbsp;%")
 
-                st.header("Nejhorší strategie podle nakoupeného množství BTC")
+                st.subheader("Nejhorší strategie podle nakoupeného množství BTC")
                 cols = st.columns(3)
 
                 for rank, (_, result) in enumerate(bot3.iterrows()):
@@ -1049,7 +1050,7 @@ if uploaded_file:
                             st.write(f"- Podíl tržních příkazů: {result['percent_market_invest']:.1f}&nbsp;%")
 
             with tab5a:
-                st.header("Nejlepší strategie podle využití kapitálu")
+                st.subheader("Nejlepší strategie podle využití kapitálu")
                 cols = st.columns(3)
 
 
@@ -1094,7 +1095,7 @@ if uploaded_file:
                             st.write(f"- Podíl limitních příkazů:  {result['percent_limit_invest']:.1f}&nbsp;%")
                             st.write(f"- Podíl tržních příkazů: {result['percent_market_invest']:.1f}&nbsp;%")
 
-                st.header("Nejhorší strategie podle využití kapitálu")
+                st.subheader("Nejhorší strategie podle využití kapitálu")
                 cols = st.columns(3)
 
                 for rank, (_, result) in enumerate(bot3.iterrows()):
