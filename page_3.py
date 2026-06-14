@@ -698,6 +698,8 @@ if uploaded_file:
         )
         df["weights"] = df["weights"].apply(lambda x: [round(float(i), 2) for i in x])
 
+        #Sloupece casovych timestamps pro jednotlive strategie
+        time_df = pd.DataFrame(df["buy_date_series"].tolist()).T
 
         if not df.empty:
 
@@ -789,7 +791,61 @@ if uploaded_file:
                             st.write(f"- Naplnění limitních příkazů: {fills}")
                             st.write(f"- Podíl limitních příkazů:  {result['percent_limit_invest']:.1f}&nbsp;%")
                             st.write(f"- Podíl tržních příkazů: {result['percent_market_invest']:.1f}&nbsp;%")
-            
+
+                st.subheader("Časový průběh ROI")
+                roi_df = pd.DataFrame(df["total_roi_series"].tolist()).T
+                roi_fig = go.Figure()
+
+                # 2. V cyklu projdeme všechny sloupce podle jejich pořadí
+                for i in range(roi_df.shape[1]):
+                    x_data = time_df.iloc[:, i]
+                    y_data = roi_df.iloc[:, i]
+                    sequence = roi_df.columns[i]
+
+                    # Přidáme jednu interaktivní křivku
+                    roi_fig.add_trace(
+                        go.Scatter(
+                            x=x_data,
+                            y=y_data,
+                            mode="lines",  # vykreslí čáru (můžeš změnit na 'lines+markers')
+                            name=f"Strategie: {sequence+1}",  # text v legendě
+                            connectgaps=False,  # ignoruje NaN hodnoty a nespojuje kvůli nim graf chybně
+                            customdata=x_data.dt.strftime('%d.%m.%Y'),
+                            hovertemplate=(
+                                    "<b>Strategie "
+                                    + str(sequence + 1)
+                                    + ": Výnosnost investice:</b> %{y:.2f}%<br><b>Datum:</b> %{customdata}<extra></extra>"
+                            )
+                        )
+                    )
+
+                    # formát osy X
+                    roi_fig.update_xaxes(
+                        tickformat="%d.%m.%Y",  # formát osy
+                        showgrid=True,  # zapnutí vertikálních grid line
+                        gridwidth=1,  # tloušťka gridu
+                        tickangle=-45,  # naklonění tick labelů
+                        range=[
+                            x_data.min(),
+                            x_data.max() + dt.timedelta(days=2)
+                        ]
+                    )
+
+                    roi_fig.update_layout(
+                        xaxis_title="Čas",
+                        yaxis_title="Výnosnost investice [%]",
+                        hovermode="x unified",
+                        legend=dict(
+                            x=0.01,
+                            y=0.99,
+                            xanchor="left",
+                            yanchor="top",
+                        )
+                    )
+
+                # 4. Vykreslení přímo ve Streamlitu
+                st.plotly_chart(roi_fig, width='stretch')
+
             with tab2a:
                 st.subheader("Nejlepší strategie podle průměrné nákupní ceny")
                 cols = st.columns(3)
@@ -875,6 +931,59 @@ if uploaded_file:
                             st.write(f"- Naplnění limitních příkazů: {fills}")
                             st.write(f"- Podíl limitních příkazů:  {result['percent_limit_invest']:.1f}&nbsp;%")
                             st.write(f"- Podíl tržních příkazů: {result['percent_market_invest']:.1f}&nbsp;%")
+
+                st.subheader("Časový průběh průměrné nákupní ceny")
+                avg_price_df = pd.DataFrame(df["avg_price_series"].tolist()).T
+                avg_price_fig = go.Figure()
+
+                # 2. V cyklu projdeme všechny sloupce podle jejich pořadí
+                for i in range(avg_price_df.shape[1]):
+                    x_data = time_df.iloc[:, i]
+                    y_data = avg_price_df.iloc[:, i]
+                    sequence = avg_price_df.columns[i]
+
+                    # Přidáme jednu interaktivní křivku
+                    avg_price_fig.add_trace(
+                        go.Scatter(
+                            x=x_data,
+                            y=y_data,
+                            mode="lines",  # vykreslí čáru (můžeš změnit na 'lines+markers')
+                            name=f"Strategie: {sequence + 1}",  # text v legendě
+                            connectgaps=False,  # ignoruje NaN hodnoty a nespojuje kvůli nim graf chybně
+                            customdata=x_data.dt.strftime('%d.%m.%Y'),
+                            hovertemplate=(
+                                    "<b>Strategie "
+                                    + str(sequence + 1)
+                                    + ": Průměrná nákupní cena:</b> %{y:.2f} USD<br><b>Datum:</b> %{customdata}<extra></extra>"
+                            ))
+                    )
+
+                    # formát osy X
+                    avg_price_fig.update_xaxes(
+                        tickformat="%d.%m.%Y",  # formát osy
+                        showgrid=True,  # zapnutí vertikálních grid line
+                        gridwidth=1,  # tloušťka gridu
+                        tickangle=-45,  # naklonění tick labelů
+                        range=[
+                            x_data.min(),
+                            x_data.max() + dt.timedelta(days=2)
+                        ]
+                    )
+
+                    avg_price_fig.update_layout(
+                        xaxis_title="Čas",
+                        yaxis_title="Průměrná nákupní cena [USD]",
+                        hovermode="x unified",
+                        legend=dict(
+                            x=0.01,
+                            y=0.99,
+                            xanchor="left",
+                            yanchor="top",
+                        )
+                    )
+
+                # 4. Vykreslení přímo ve Streamlitu
+                st.plotly_chart(avg_price_fig, width='stretch')
 
             with tab3a:
                 st.subheader("Nejlepší strategie podle celkového zisku")
@@ -962,6 +1071,59 @@ if uploaded_file:
                             st.write(f"- Naplnění limitních příkazů: {fills}")
                             st.write(f"- Podíl limitních příkazů:  {result['percent_limit_invest']:.1f}&nbsp;%")
                             st.write(f"- Podíl tržních příkazů: {result['percent_market_invest']:.1f}&nbsp;%")
+
+                st.subheader("Časový průběh celkového zisku")
+                total_profit_df = pd.DataFrame(df["total_profit_series"].tolist()).T
+                total_profit_fig = go.Figure()
+
+                # 2. V cyklu projdeme všechny sloupce podle jejich pořadí
+                for i in range(total_profit_df.shape[1]):
+                    x_data = time_df.iloc[:, i]
+                    y_data = total_profit_df.iloc[:, i]
+                    sequence = total_profit_df.columns[i]
+
+                    # Přidáme jednu interaktivní křivku
+                    total_profit_fig.add_trace(
+                        go.Scatter(
+                            x=x_data,
+                            y=y_data,
+                            mode="lines",  # vykreslí čáru (můžeš změnit na 'lines+markers')
+                            name=f"Strategie: {sequence + 1}",  # text v legendě
+                            connectgaps=False,  # ignoruje NaN hodnoty a nespojuje kvůli nim graf chybně
+                            customdata=x_data.dt.strftime('%d.%m.%Y'),
+                            hovertemplate=(
+                                    "<b>Strategie "
+                                    + str(sequence + 1)
+                                    + ": Celkový zisk:</b> %{y:.2f} USD<br><b>Datum:</b> %{customdata}<extra></extra>"
+                            ))
+                    )
+
+                    # formát osy X
+                    total_profit_fig.update_xaxes(
+                        tickformat="%d.%m.%Y",  # formát osy
+                        showgrid=True,  # zapnutí vertikálních grid line
+                        gridwidth=1,  # tloušťka gridu
+                        tickangle=-45,  # naklonění tick labelů
+                        range=[
+                            x_data.min(),
+                            x_data.max() + dt.timedelta(days=2)
+                        ]
+                    )
+
+                    total_profit_fig.update_layout(
+                        xaxis_title="Čas",
+                        yaxis_title="Celkový zisk [USD]",
+                        hovermode="x unified",
+                        legend=dict(
+                            x=0.01,
+                            y=0.99,
+                            xanchor="left",
+                            yanchor="top",
+                        )
+                    )
+
+                # 4. Vykreslení přímo ve Streamlitu
+                st.plotly_chart(total_profit_fig, width='stretch')
             with tab4a:
                 st.subheader("Nejlepší strategie podle nakoupeného množství BTC")
                 cols = st.columns(3)
@@ -1049,6 +1211,59 @@ if uploaded_file:
                             st.write(f"- Podíl limitních příkazů:  {result['percent_limit_invest']:.1f}&nbsp;%")
                             st.write(f"- Podíl tržních příkazů: {result['percent_market_invest']:.1f}&nbsp;%")
 
+                st.subheader("Časový průběh nakoupeného množství BTC")
+                total_btc_df = pd.DataFrame(df["total_btc_series"].tolist()).T
+                total_btc_fig = go.Figure()
+
+                # 2. V cyklu projdeme všechny sloupce podle jejich pořadí
+                for i in range(total_btc_df.shape[1]):
+                    x_data = time_df.iloc[:, i]
+                    y_data = total_btc_df.iloc[:, i]
+                    sequence = total_btc_df.columns[i]
+
+                    # Přidáme jednu interaktivní křivku
+                    total_btc_fig.add_trace(
+                        go.Scatter(
+                            x=x_data,
+                            y=y_data,
+                            mode="lines",  # vykreslí čáru (můžeš změnit na 'lines+markers')
+                            name=f"Strategie: {sequence + 1}",  # text v legendě
+                            connectgaps=False,  # ignoruje NaN hodnoty a nespojuje kvůli nim graf chybně
+                            customdata=x_data.dt.strftime('%d.%m.%Y'),
+                            hovertemplate=(
+                                    "<b>Strategie "
+                                    + str(sequence + 1)
+                                    + ": Celkové množství BTC:</b> %{y:.8f}<br><b>Datum:</b> %{customdata}<extra></extra>"
+                            ))
+                    )
+
+                    # formát osy X
+                    total_btc_fig.update_xaxes(
+                        tickformat="%d.%m.%Y",  # formát osy
+                        showgrid=True,  # zapnutí vertikálních grid line
+                        gridwidth=1,  # tloušťka gridu
+                        tickangle=-45,  # naklonění tick labelů
+                        range=[
+                            x_data.min(),
+                            x_data.max() + dt.timedelta(days=2)
+                        ]
+                    )
+
+                    total_btc_fig.update_layout(
+                        xaxis_title="Čas",
+                        yaxis_title="Celkové množství BTC",
+                        hovermode="x unified",
+                        legend=dict(
+                            x=0.01,
+                            y=0.99,
+                            xanchor="left",
+                            yanchor="top",
+                        )
+                    )
+
+                # 4. Vykreslení přímo ve Streamlitu
+                st.plotly_chart(total_btc_fig, width='stretch')
+
             with tab5a:
                 st.subheader("Nejlepší strategie podle využití kapitálu")
                 cols = st.columns(3)
@@ -1135,6 +1350,60 @@ if uploaded_file:
                             st.write(f"- Naplnění limitních příkazů: {fills}")
                             st.write(f"- Podíl limitních příkazů:  {result['percent_limit_invest']:.1f}&nbsp;%")
                             st.write(f"- Podíl tržních příkazů: {result['percent_market_invest']:.1f}&nbsp;%")
+
+                st.subheader("Časový průběh celkově vloženého kapitálu")
+                total_cost_df = pd.DataFrame(df["total_cost_series"].tolist()).T
+                total_cost_fig = go.Figure()
+
+                # 2. V cyklu projdeme všechny sloupce podle jejich pořadí
+                for i in range(total_cost_df.shape[1]):
+                    x_data = time_df.iloc[:, i]
+                    y_data = total_cost_df.iloc[:, i]
+                    sequence = total_cost_df.columns[i]
+
+                    # Přidáme jednu interaktivní křivku
+                    total_cost_fig.add_trace(
+                        go.Scatter(
+                            x=x_data,
+                            y=y_data,
+                            mode="lines",  # vykreslí čáru (můžeš změnit na 'lines+markers')
+                            name=f"Strategie: {sequence + 1}",  # text v legendě
+                            connectgaps=False,  # ignoruje NaN hodnoty a nespojuje kvůli nim graf chybně
+                            customdata=x_data.dt.strftime('%d.%m.%Y'),
+                            hovertemplate=(
+                                    "<b>Strategie "
+                                    + str(sequence + 1)
+                                    + ": Celkově vložený kapitál:</b> %{y:.2f} USD<br><b>Datum:</b> %{customdata}<extra></extra>"
+                            ))
+                    )
+
+                    # formát osy X
+                    total_cost_fig.update_xaxes(
+                        tickformat="%d.%m.%Y",  # formát osy
+                        showgrid=True,  # zapnutí vertikálních grid line
+                        gridwidth=1,  # tloušťka gridu
+                        tickangle=-45,  # naklonění tick labelů
+                        range=[
+                            x_data.min(),
+                            x_data.max() + dt.timedelta(days=2)
+                        ]
+                    )
+
+                    total_cost_fig.update_layout(
+                        xaxis_title="Čas",
+                        yaxis_title="Celkově vložený kapitál [USD]",
+                        hovermode="x unified",
+                        legend=dict(
+                            x=0.01,
+                            y=0.99,
+                            xanchor="left",
+                            yanchor="top",
+                        )
+                    )
+
+                # 4. Vykreslení přímo ve Streamlitu
+                st.plotly_chart(total_cost_fig, width='stretch')
+            st.write("---")
         else:
             st.write("Nenalezen žádný validní výsledek. Zkontrolujte součet vah a formát dat.")
 st.write("---")
