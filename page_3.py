@@ -7,6 +7,7 @@ import plotly.graph_objects as go
 import pandas as pd
 import numpy as np
 import time
+import io
 
 st.header("Porovnávač strategií")
 
@@ -1404,6 +1405,21 @@ if uploaded_file:
                 # 4. Vykreslení přímo ve Streamlitu
                 st.plotly_chart(total_cost_fig, width='stretch')
             st.write("---")
+            # Vytvoříme dočasný buffer v paměti
+            buffer = io.BytesIO()
+
+            # Zapíšeme dataframe do bufferu
+            with pd.ExcelWriter(buffer, engine="openpyxl") as writer:
+                df.drop(columns=df.filter(regex="(?i)series").columns).to_excel(writer, index=False, sheet_name="Data")
+            excel_data = buffer.getvalue()
+
+            st.download_button(
+                label="Výsledky ke stažení ve formátu xlsx",
+                data=excel_data,
+                file_name="results.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                icon=":material/download:",
+            )
         else:
             st.write("Nenalezen žádný validní výsledek. Zkontrolujte součet vah a formát dat.")
 st.write("---")
