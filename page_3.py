@@ -666,12 +666,13 @@ if uploaded_file:
                 continue
 
             # 2) generování všech market kombinací
-            market_sets = tr.generate_market_sets(limit_levels,weights)
-
-            # 3) backtest přes všechny kombinace
+            market_sets = (frozenset(), frozenset({0}))  # tr.generate_market_sets(limit_levels,weights)
+                # 3) backtest přes všechny kombinace
             seq_results = []
 
             for market_set in market_sets:
+                if market_set == frozenset({0}):
+                    continue
                 result = run_backtest(weights, market_set)
 
                 seq_results.append({
