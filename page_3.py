@@ -654,7 +654,7 @@ if uploaded_file:
                 continue
 
             # generování všech market kombinací
-            market_sets = (frozenset(), frozenset({0}))  # tr.generate_market_sets(limit_levels,weights)
+            market_sets = tr.generate_market_sets(limit_levels,weights) # pokud nechci trzni nakupy nidke tak (frozenset(), frozenset({0})) 
 
             seq_results = []
 
