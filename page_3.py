@@ -6,7 +6,6 @@ import plotly.express as px
 import plotly.graph_objects as go
 import pandas as pd
 import numpy as np
-import time
 import io
 
 st.header("Porovnávač strategií")
@@ -21,8 +20,6 @@ st.markdown("""
             Vyhodnocení strategií se provádí na základě klíčových metrik: zhodnocení investice (ROI), 
             průměrná nákupní cena, celkový absolutní zisk z investice, množství nakoupeného BTC a efektivita využítí kapitálu.
             """, text_alignment="justify")
-
-start = time.time()
 
 btc_full = tr.load_btc_data()
 
@@ -106,15 +103,6 @@ cz_months = {
     9: "září", 10: "říjen", 11: "listopad", 12: "prosinec"
 }
 
-print(f"Počet záznamů pro simulaci: {len(btc)}")
-
-# české měsíce
-cz_months = {
-    1: "leden", 2: "únor", 3: "březen", 4: "duben",
-    5: "květen", 6: "červen", 7: "červenec", 8: "srpen",
-    9: "září", 10: "říjen", 11: "listopad", 12: "prosinec"
-}
-
 # data (1x denně)
 btc_filter_key = f"{st.session_state.start_date}_{st.session_state.end_date}"
 if 'btc_thinned' not in st.session_state or st.session_state.get('last_btc_filter_key_thinned') != btc_filter_key:
@@ -141,7 +129,7 @@ if 'btc_plot_key' not in st.session_state or st.session_state.btc_plot_key != pl
         y="Close",
     )
 
-    # formát osy X
+    # --- formát osy X ---
     btc_fig.update_xaxes(
         tickformat="%d.%m.%Y",  # formát osy
         showgrid=True,  # zapnutí vertikálních grid line
@@ -159,7 +147,7 @@ if 'btc_plot_key' not in st.session_state or st.session_state.btc_plot_key != pl
         hovermode="x unified"
     )
 
-    # tooltip
+    # --- tooltip ---
     btc_fig.update_traces(
         line=dict(color="#F7931A", width=1.5),
         customdata=btc_thinned['date_cz'],
@@ -282,10 +270,10 @@ st.number_input(
 )
 INVEST_PER_DAY = st.session_state.investment_number
 
-# 1) základní BTFD (NEMĚNÍ SE)
+# --- základní BTFD ---
 btfd_full = tr.compute_btfd_df(btc_full, known_initial_ath)
 
-# --- 3. Ořez btfd pro simulaci ---
+# --- ořez btfd pro simulaci ---
 btfd_filter_key = f"{st.session_state.start_date}_{st.session_state.end_date}"
 if 'btfd_filtered' not in st.session_state or st.session_state.get('last_btfd_filter_key') != btfd_filter_key:
     st.session_state.btfd_filtered = btfd_full[
@@ -652,7 +640,7 @@ if uploaded_file:
                 st.error(f"Řádek {seq_number}: obsahuje váhy mimo rozsah 0–1, řádek bude přeskočen")
                 continue
 
-            # 1) načtení vah podle limit_levels
+            # načtení vah podle limit_levels
             weights = [row[f"lvl_{lvl}"] for lvl in limit_levels]
 
             total_weight = sum(weights)
@@ -665,9 +653,9 @@ if uploaded_file:
                 st.error(f"Řádek {seq_number}: součet vah je {total_weight:.4f} (< 1), řádek bude přeskočen")
                 continue
 
-            # 2) generování všech market kombinací
+            # generování všech market kombinací
             market_sets = (frozenset(), frozenset({0}))  # tr.generate_market_sets(limit_levels,weights)
-                # 3) backtest přes všechny kombinace
+
             seq_results = []
 
             for market_set in market_sets:
@@ -798,7 +786,7 @@ if uploaded_file:
                 roi_df = pd.DataFrame(df["total_roi_series"].tolist()).T
                 roi_fig = go.Figure()
 
-                # 2. V cyklu projdeme všechny sloupce podle jejich pořadí
+                # V cyklu projdeme všechny sloupce podle jejich pořadí
                 for i in range(roi_df.shape[1]):
                     x_data = time_df.iloc[:, i]
                     y_data = roi_df.iloc[:, i]
@@ -809,7 +797,7 @@ if uploaded_file:
                         go.Scatter(
                             x=x_data,
                             y=y_data,
-                            mode="lines",  # vykreslí čáru (můžeš změnit na 'lines+markers')
+                            mode="lines",  # vykreslí čáru
                             name=f"Strategie: {sequence+1}",  # text v legendě
                             connectgaps=False,  # ignoruje NaN hodnoty a nespojuje kvůli nim graf chybně
                             customdata=x_data.dt.strftime('%d.%m.%Y'),
@@ -821,7 +809,7 @@ if uploaded_file:
                         )
                     )
 
-                    # formát osy X
+                    # --- formát osy X --
                     roi_fig.update_xaxes(
                         tickformat="%d.%m.%Y",  # formát osy
                         showgrid=True,  # zapnutí vertikálních grid line
@@ -845,7 +833,7 @@ if uploaded_file:
                         )
                     )
 
-                # 4. Vykreslení přímo ve Streamlitu
+                # Vykreslení ve Streamlitu
                 st.plotly_chart(roi_fig, width='stretch')
 
             with tab2a:
@@ -938,7 +926,7 @@ if uploaded_file:
                 avg_price_df = pd.DataFrame(df["avg_price_series"].tolist()).T
                 avg_price_fig = go.Figure()
 
-                # 2. V cyklu projdeme všechny sloupce podle jejich pořadí
+                # V cyklu projdeme všechny sloupce podle jejich pořadí
                 for i in range(avg_price_df.shape[1]):
                     x_data = time_df.iloc[:, i]
                     y_data = avg_price_df.iloc[:, i]
@@ -949,7 +937,7 @@ if uploaded_file:
                         go.Scatter(
                             x=x_data,
                             y=y_data,
-                            mode="lines",  # vykreslí čáru (můžeš změnit na 'lines+markers')
+                            mode="lines",  # vykreslí čáru
                             name=f"Strategie: {sequence + 1}",  # text v legendě
                             connectgaps=False,  # ignoruje NaN hodnoty a nespojuje kvůli nim graf chybně
                             customdata=x_data.dt.strftime('%d.%m.%Y'),
@@ -960,7 +948,7 @@ if uploaded_file:
                             ))
                     )
 
-                    # formát osy X
+                    # --- formát osy X ---
                     avg_price_fig.update_xaxes(
                         tickformat="%d.%m.%Y",  # formát osy
                         showgrid=True,  # zapnutí vertikálních grid line
@@ -984,7 +972,7 @@ if uploaded_file:
                         )
                     )
 
-                # 4. Vykreslení přímo ve Streamlitu
+                # Vykreslení ve Streamlitu
                 st.plotly_chart(avg_price_fig, width='stretch')
 
             with tab3a:
@@ -1078,7 +1066,7 @@ if uploaded_file:
                 total_profit_df = pd.DataFrame(df["total_profit_series"].tolist()).T
                 total_profit_fig = go.Figure()
 
-                # 2. V cyklu projdeme všechny sloupce podle jejich pořadí
+                # V cyklu projdeme všechny sloupce podle jejich pořadí
                 for i in range(total_profit_df.shape[1]):
                     x_data = time_df.iloc[:, i]
                     y_data = total_profit_df.iloc[:, i]
@@ -1089,7 +1077,7 @@ if uploaded_file:
                         go.Scatter(
                             x=x_data,
                             y=y_data,
-                            mode="lines",  # vykreslí čáru (můžeš změnit na 'lines+markers')
+                            mode="lines",  # vykreslí čáru
                             name=f"Strategie: {sequence + 1}",  # text v legendě
                             connectgaps=False,  # ignoruje NaN hodnoty a nespojuje kvůli nim graf chybně
                             customdata=x_data.dt.strftime('%d.%m.%Y'),
@@ -1100,7 +1088,7 @@ if uploaded_file:
                             ))
                     )
 
-                    # formát osy X
+                    # --- formát osy X ---
                     total_profit_fig.update_xaxes(
                         tickformat="%d.%m.%Y",  # formát osy
                         showgrid=True,  # zapnutí vertikálních grid line
@@ -1124,7 +1112,7 @@ if uploaded_file:
                         )
                     )
 
-                # 4. Vykreslení přímo ve Streamlitu
+                # Vykreslení ve Streamlitu
                 st.plotly_chart(total_profit_fig, width='stretch')
             with tab4a:
                 st.subheader("Nejlepší strategie podle nakoupeného množství BTC")
@@ -1217,7 +1205,7 @@ if uploaded_file:
                 total_btc_df = pd.DataFrame(df["total_btc_series"].tolist()).T
                 total_btc_fig = go.Figure()
 
-                # 2. V cyklu projdeme všechny sloupce podle jejich pořadí
+                #  cyklu projdeme všechny sloupce podle jejich pořadí
                 for i in range(total_btc_df.shape[1]):
                     x_data = time_df.iloc[:, i]
                     y_data = total_btc_df.iloc[:, i]
@@ -1228,7 +1216,7 @@ if uploaded_file:
                         go.Scatter(
                             x=x_data,
                             y=y_data,
-                            mode="lines",  # vykreslí čáru (můžeš změnit na 'lines+markers')
+                            mode="lines",  # vykreslí čáru
                             name=f"Strategie: {sequence + 1}",  # text v legendě
                             connectgaps=False,  # ignoruje NaN hodnoty a nespojuje kvůli nim graf chybně
                             customdata=x_data.dt.strftime('%d.%m.%Y'),
@@ -1239,7 +1227,7 @@ if uploaded_file:
                             ))
                     )
 
-                    # formát osy X
+                    # --- formát osy X ---
                     total_btc_fig.update_xaxes(
                         tickformat="%d.%m.%Y",  # formát osy
                         showgrid=True,  # zapnutí vertikálních grid line
@@ -1263,7 +1251,7 @@ if uploaded_file:
                         )
                     )
 
-                # 4. Vykreslení přímo ve Streamlitu
+                # Vykreslení ve Streamlitu
                 st.plotly_chart(total_btc_fig, width='stretch')
 
             with tab5a:
@@ -1357,7 +1345,7 @@ if uploaded_file:
                 total_cost_df = pd.DataFrame(df["total_cost_series"].tolist()).T
                 total_cost_fig = go.Figure()
 
-                # 2. V cyklu projdeme všechny sloupce podle jejich pořadí
+                # V cyklu projdeme všechny sloupce podle jejich pořadí
                 for i in range(total_cost_df.shape[1]):
                     x_data = time_df.iloc[:, i]
                     y_data = total_cost_df.iloc[:, i]
@@ -1368,7 +1356,7 @@ if uploaded_file:
                         go.Scatter(
                             x=x_data,
                             y=y_data,
-                            mode="lines",  # vykreslí čáru (můžeš změnit na 'lines+markers')
+                            mode="lines",  # vykreslí čáru
                             name=f"Strategie: {sequence + 1}",  # text v legendě
                             connectgaps=False,  # ignoruje NaN hodnoty a nespojuje kvůli nim graf chybně
                             customdata=x_data.dt.strftime('%d.%m.%Y'),
@@ -1379,7 +1367,7 @@ if uploaded_file:
                             ))
                     )
 
-                    # formát osy X
+                    # --- formát osy X ---
                     total_cost_fig.update_xaxes(
                         tickformat="%d.%m.%Y",  # formát osy
                         showgrid=True,  # zapnutí vertikálních grid line
@@ -1403,17 +1391,18 @@ if uploaded_file:
                         )
                     )
 
-                # 4. Vykreslení přímo ve Streamlitu
+                # Vykreslení ve Streamlitu
                 st.plotly_chart(total_cost_fig, width='stretch')
             st.write("---")
-            # Vytvoříme dočasný buffer v paměti
+
+            # Vytvoří dočasný buffer v paměti
             buffer = io.BytesIO()
 
-            # Zapíšeme dataframe do bufferu
+            # Zapíše dataframe do bufferu
             with pd.ExcelWriter(buffer, engine="openpyxl") as writer:
                 df.drop(columns=df.filter(regex="(?i)series").columns).to_excel(writer, index=False, sheet_name="Data")
             excel_data = buffer.getvalue()
-
+            # tlačítko pro stažení souboru
             st.download_button(
                 label="Výsledky ke stažení ve formátu xlsx",
                 data=excel_data,
@@ -1424,28 +1413,3 @@ if uploaded_file:
         else:
             st.write("Nenalezen žádný validní výsledek. Zkontrolujte součet vah a formát dat.")
 st.write("---")
-
-# --- BTFD statistika ---
-
-mean_btfd = btfd['BTFD'].mean()
-mean_multiplier = btfd['Multiplier'].mean()
-#
-#
-# Vezmeme všechny multiplikátory
-adjusted_investments = multipliers * INVEST_PER_DAY
-# Medián denní investice
-median_daily_invest = np.median(adjusted_investments)
-# Medián měsíční investice (30 dní)
-median_monthly_invest = median_daily_invest * 30
-
-# st.write("## 📈 Statistika BTFD indikátoru a multiplikátoru")
-# st.write(f"- Průměrná hodnota BTFD indikátoru: {mean_btfd:.2f}&nbsp;%")
-# st.write(f"- Průměrná hodnota multiplikátoru: {mean_multiplier:.3f}×")
-# st.write(f"- Odpovídající průměrná denní investice: {mean_multiplier * INVEST_PER_DAY:.2f}&nbsp;USD")
-# st.write(f"- Odpovídající průměrná měsíční investice (30 dní): {mean_multiplier * INVEST_PER_DAY * 30:.2f}&nbsp;USD")
-# st.write(f"- Medián denní investice: {median_daily_invest:.2f}&nbsp;USD")
-# st.write(f"- Medián měsíční investice: {median_monthly_invest:.2f}&nbsp;USD")
-
-end = time.time()
-
-#st.write(f"Total runtime of the program is {end - start} seconds")

@@ -6,8 +6,6 @@ import plotly.express as px
 import plotly.graph_objects as go
 import pandas as pd
 import numpy as np
-import time
-
 
 st.header("Dynamická DCA strategie")
 st.markdown("""
@@ -28,7 +26,6 @@ st.markdown("""
             výši pravidelné investice a nastavení multiplikátoru **&beta;** pro index **BTFD**. Výchozí investiční částka nákupu 
             bude pro každou objednávku zvýšena či snížena podle aktuální hodnoty násobitele **&beta;**. Předpokládaná frekvence nákupu je 1x denně.
             """)
-start = time.time()
 
 btc_full = tr.load_btc_data()
 
@@ -276,10 +273,10 @@ st.number_input(
 INVEST_PER_DAY = st.session_state.investment_number
 
 
-# 1) základní BTFD (NEMĚNÍ SE)
+# --- základní BTFD ---
 btfd_full = tr.compute_btfd_df(btc_full, known_initial_ath)
 
-# --- 3. Ořez btfd pro simulaci ---
+# ---ořez btfd pro simulaci ---
 btfd_filter_key = f"{st.session_state.start_date}_{st.session_state.end_date}"
 if'btfd_filtered' not in st.session_state or st.session_state.get('last_btfd_filter_key') != btfd_filter_key:
     st.session_state.btfd_filtered = btfd_full[
@@ -332,7 +329,7 @@ plot_key1 = (
     f"{st.session_state.investment_number}"
 )
 
-# tooltip
+# ---tooltip ---
 if 'btfd_plot_key' not in st.session_state or st.session_state.btfd_plot_key != plot_key1:
 
     # --- Připrav graf jen pokud se změnil časový rozsah ---
@@ -540,8 +537,3 @@ with tab3:
 
 with tab4:
     st.plotly_chart(st.session_state.invest_fig, key="invest_plot")
-
-
-end = time.time()
-
-#st.write(f"Total runtime of the program is {end - start} seconds")

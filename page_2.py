@@ -6,7 +6,6 @@ import plotly.express as px
 import plotly.graph_objects as go
 import pandas as pd
 import numpy as np
-import time
 
 st.header("Historický backtest")
 
@@ -19,8 +18,6 @@ st.markdown("""
             Vyhodnocení strategie se provádí na základě několika klíčových metrik, včetně návratnosti investice (ROI), 
             průměrné nákupní ceny, aktuální hodnoty investice a množství nakoupeného BTC.
             """, text_alignment="justify")
-
-start = time.time()
 
 btc_full = tr.load_btc_data()
 
@@ -94,26 +91,17 @@ btc = tr.get_filtered_data(
 )
 last_price = btc.iloc[-1]['Close']
 ref_positions = np.where(btc['Datetime'].dt.hour == HOUR)[0]
+
 print(f"Počet záznamů pro simulaci: {len(btc)}")
 
-
-# české měsíce
+# --- české měsíce ---
 cz_months = {
     1: "leden", 2: "únor", 3: "březen", 4: "duben",
     5: "květen", 6: "červen", 7: "červenec", 8: "srpen",
     9: "září", 10: "říjen", 11: "listopad", 12: "prosinec"
 }
 
-print(f"Počet záznamů pro simulaci: {len(btc)}")
-
-# české měsíce
-cz_months = {
-    1: "leden", 2: "únor", 3: "březen", 4: "duben",
-    5: "květen", 6: "červen", 7: "červenec", 8: "srpen",
-    9: "září", 10: "říjen", 11: "listopad", 12: "prosinec"
-}
-
-# data (1x denně)
+# --- data (1x denně) ---
 btc_filter_key = f"{st.session_state.start_date}_{st.session_state.end_date}"
 if 'btc_thinned' not in st.session_state or st.session_state.get('last_btc_filter_key_thinned') != btc_filter_key:
     btc["hour"] = btc["Datetime"].dt.hour
@@ -124,7 +112,7 @@ btc_thinned = st.session_state.btc_thinned
 
 plot_key = f"{st.session_state.start_date}_{st.session_state.end_date}"
 
-# tooltip
+# --- tooltip ---
 if 'btc_plot_key' not in st.session_state or st.session_state.btc_plot_key != plot_key:
     # --- Připrav graf jen pokud se změnil časový rozsah ---
     btc_thinned['date_cz'] = (
@@ -139,7 +127,7 @@ if 'btc_plot_key' not in st.session_state or st.session_state.btc_plot_key != pl
         y="Close",
     )
 
-    # formát osy X
+    # --- formát osy X ---
     btc_fig.update_xaxes(
         tickformat="%d.%m.%Y",  # formát osy
         showgrid=True,  # zapnutí vertikálních grid line
@@ -157,7 +145,7 @@ if 'btc_plot_key' not in st.session_state or st.session_state.btc_plot_key != pl
         hovermode="x unified"
     )
 
-    # tooltip
+    # --- tooltip ---
     btc_fig.update_traces(
         line=dict(color="#F7931A", width=1.5),
         customdata=btc_thinned['date_cz'],
@@ -279,10 +267,10 @@ st.number_input(
 )
 INVEST_PER_DAY = st.session_state.investment_number
 
-# 1) základní BTFD (NEMĚNÍ SE)
+# --- základní BTFD ---
 btfd_full = tr.compute_btfd_df(btc_full, known_initial_ath)
 
-# --- 3. Ořez btfd pro simulaci ---
+# --- ořez btfd pro simulaci ---
 btfd_filter_key = f"{st.session_state.start_date}_{st.session_state.end_date}"
 if 'btfd_filtered' not in st.session_state or st.session_state.get('last_btfd_filter_key') != btfd_filter_key:
     st.session_state.btfd_filtered = btfd_full[
@@ -450,7 +438,6 @@ def simulate_configuration(
 ):
     market_mask = build_market_mask(limit_levels, market_set)
 
-    # --- použij list, simulate_day_hourly do něj appenduje ---
     n_days = len(ref_positions)
 
     avg_prices_series = np.zeros((n_days), dtype=np.float64)
@@ -512,7 +499,7 @@ def simulate_configuration(
     if count_days == 0:
         return None
     
-    # vektorové přiřazení datumu pro platné dny
+    # --- vektorové přiřazení datumu pro platné dny
     buy_date_series[valid_days_mask] = btc['Datetime'].values[buy_indices[valid_days_mask]]
 
     
@@ -537,7 +524,7 @@ def simulate_configuration(
         where=total_cost_series != 0
     ) * 100
 
-    #setting correct values for the last day (in case last day(s) had no purchase)
+    # --- setting correct values for the last day (in case last day(s) had no purchase)
     last_valid_idx = np.max(np.where(total_cost_series != 0))
     final_value = total_btc * last_price
     final_profit = final_value - total_cost
@@ -602,12 +589,12 @@ def render_sequence(col, seq_number):
         st.subheader(f"Strategie {seq_number}")
         weights = []
 
-        # Získat minulé hodnoty, pokud jsou a pokud se změnilo téma
+        # --- Získat minulé hodnoty, pokud jsou a pokud se změnilo téma
         prev_weights = st.session_state.get(f"weights_seq{seq_number}", [0.0]*len(limit_levels))
 
         for i, lvl in enumerate(limit_levels):
             slider_key = f"slider_weight{seq_number}_lvl{lvl}"
-            # Pokud máme předchozí hodnotu a změnilo se téma, použijeme ji
+            # Pokud máme předchozí hodnotu a změnilo se téma, použijuji
             slider_value = prev_weights[i]
             w = st.slider(
                 f"Pokles o {lvl}&nbsp;%",
@@ -619,7 +606,7 @@ def render_sequence(col, seq_number):
             )
             weights.append(w)
 
-        # Po vykreslení sliderů aktualizujeme session_state
+        # Po vykreslení sliderů aktualizuj session_state
         st.session_state[f"weights_seq{seq_number}"] = tuple(weights)
 
         total_weight = sum(weights)
@@ -679,7 +666,7 @@ if results_1 and results_2:
         f"{weights_key1}_{market_key1}_{weights_key2}_{market_key2}"
 
     )
-    # tooltip
+    # --- tooltip ---
     if 'btfd_plot_key' not in st.session_state or st.session_state.btfd_plot_key != plot_key1:
 
         df_btfd_plot_1 = pd.DataFrame({
@@ -729,7 +716,7 @@ if results_1 and results_2:
         btfd_fig.add_hline(y=0.0, line_dash="dash", line_color="#F7931A", annotation_text=f"0 %",
                            annotation_position="top right")
 
-        # formát osy X
+        # --- formát osy X ---
         btfd_fig.update_xaxes(
             tickformat="%d.%m.%Y",  # formát osy
             showgrid=True,  # zapnutí vertikálních grid line
@@ -784,7 +771,7 @@ if results_1 and results_2:
         multiplier_fig.add_hline(y=1.0, line_dash="dash", line_color="green", annotation_text=f"Min: 1.0x",
                                  annotation_position="bottom right")
 
-        # formát osy X
+        # --- formát osy X ---
         multiplier_fig.update_xaxes(
             tickformat="%d.%m.%Y",  # formát osy
             showgrid=True,  # zapnutí vertikálních grid line
@@ -1091,7 +1078,7 @@ if results_1 and results_2:
             )
         )
 
-        # formát osy X
+        # --- formát osy X ---
         total_value_fig.update_xaxes(
             tickformat="%d.%m.%Y",  # formát osy
             showgrid=True,  # zapnutí vertikálních grid line
@@ -1142,7 +1129,7 @@ if results_1 and results_2:
             )
         )
 
-        # formát osy X
+        # --- formát osy X ---
         total_btc_fig.update_xaxes(
             tickformat="%d.%m.%Y",  # formát osy
             showgrid=True,  # zapnutí vertikálních grid line
@@ -1182,8 +1169,6 @@ if results_1 and results_2:
         st.plotly_chart(st.session_state.total_value_fig, key="total_value_plot")
     with tab4b:
         st.plotly_chart(st.session_state.total_btc_fig, key="total_btc_plot")
-
-    # --- 1. TOP podle průměrné ceny ---
 
     col1b, col2b = st.columns(2)
 
@@ -1232,27 +1217,3 @@ if results_1 and results_2:
 else:
     st.warning("Neplatné nastavení vah. Upravte váhy tak, aby jejich součet byl přesně roven 1.00.")    
 st.write("---")
-# --- BTFD statistika ---
-
-mean_btfd = btfd['BTFD'].mean()
-mean_multiplier = btfd['Multiplier'].mean()
-#
-#
-# Vezmeme všechny multiplikátory
-adjusted_investments = multipliers * INVEST_PER_DAY
-# Medián denní investice
-median_daily_invest = np.median(adjusted_investments)
-# Medián měsíční investice (30 dní)
-median_monthly_invest = median_daily_invest * 30
-
-# st.write("## 📈 Statistika BTFD indikátoru a multiplikátoru")
-# st.write(f"- Průměrná hodnota BTFD indikátoru: {mean_btfd:.2f}&nbsp;%")
-# st.write(f"- Průměrná hodnota multiplikátoru: {mean_multiplier:.3f}×")
-# st.write(f"- Odpovídající průměrná denní investice: {mean_multiplier * INVEST_PER_DAY:.2f}&nbsp;USD")
-# st.write(f"- Odpovídající průměrná měsíční investice (30 dní): {mean_multiplier * INVEST_PER_DAY * 30:.2f}&nbsp;USD")
-# st.write(f"- Medián denní investice: {median_daily_invest:.2f}&nbsp;USD")
-# st.write(f"- Medián měsíční investice: {median_monthly_invest:.2f}&nbsp;USD")
-
-end = time.time()
-
-#st.write(f"Total runtime of the program is {end - start} seconds")
