@@ -685,7 +685,8 @@ if uploaded_file:
             ]
         )
         df["weights"] = df["weights"].apply(lambda x: [round(float(i), 2) for i in x])
-        df["strategy"] = df.index + 1
+        df["sequence"] = df.index + 1
+        df.rename(columns={"sequence": "strategy"},inplace=True)
         st.write("Vytvořené strategie:")
         st.dataframe(df[["strategy", "weights", "market_set"]].rename(columns={"strategy": "Strategie č.", "weights": "Váhy [lvl_0; lvl_1; lvl_2; lvl_3; lvl_4; lvl_5]", "market_set": "Tržní nákup [lvl]"}), hide_index=True)
         
@@ -1402,7 +1403,7 @@ if uploaded_file:
 
             # Zapíše dataframe do bufferu
             with pd.ExcelWriter(buffer, engine="openpyxl") as writer:
-                df.drop(columns=df.filter(regex="(?i)series").columns).to_excel(writer, index=False, sheet_name="Data")
+                df.drop(columns=df.filter(regex="(?i)series").columns).drop(columns=["market_buy_for"]).to_excel(writer, index=False, sheet_name="Data")
             excel_data = buffer.getvalue()
             # tlačítko pro stažení souboru
             st.download_button(
