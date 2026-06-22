@@ -613,7 +613,7 @@ if uploaded_file:
     df = df.reset_index(drop=True)
     
     # strategie číslo odpovídá řádku (index + 1)
-    df.insert(0, "Strategie č.", df.index + 1)
+    df.insert(0, "Řádek č.", df.index)
     
     st.write("Načtené váhy:")
     st.dataframe(df, hide_index=True)
@@ -624,8 +624,6 @@ if uploaded_file:
         st.error(f"Chybí sloupce {sorted(missing)}")
 
     else:      
-        st.header("Výsledky a porovnání strategií")
-
         for seq_number, row in df.iterrows():
 
 
@@ -687,10 +685,14 @@ if uploaded_file:
             ]
         )
         df["weights"] = df["weights"].apply(lambda x: [round(float(i), 2) for i in x])
-
+        df["strategy"] = df.index + 1
+        st.write("Vytvořené strategie:")
+        st.dataframe(df[["strategy", "weights", "market_set"]].rename(columns={"strategy": "Strategie č.", "weights": "Váhy [lvl_0; lvl_1; lvl_2; lvl_3; lvl_4; lvl_5]", "market_set": "Tržní nákup [lvl]"}), hide_index=True)
+        
         #Sloupece casovych timestamps pro jednotlive strategie
         time_df = pd.DataFrame(df["buy_date_series"].tolist()).T
 
+        st.header("Výsledky a porovnání strategií")
         if not df.empty:
 
             tab1a, tab2a, tab3a, tab4a, tab5a = st.tabs(["Procentuální zhodnocení", "Průměrná nákupní cena", "Celkový zisk", "Nakoupené množství BTC", "Využití kapitálu"])
@@ -717,7 +719,7 @@ if uploaded_file:
                             }
 
                             st.write(f"""
-                            Strategie č. {result['sequence']}  
+                            Strategie č. {result['strategy']}  
                             Váhy: {[round(float(x), 2) for x in result['weights']]}  
                             **Tržní nákup:** {list(result['market_set'])}
                             """)
@@ -758,7 +760,7 @@ if uploaded_file:
                             }
 
                             st.write(f"""
-                            Strategie č. {result['sequence']}  
+                            Strategie č. {result['strategy']}  
                             Váhy: {[round(float(x), 2) for x in result['weights']]}  
                             **Tržní nákup:** {list(result['market_set'])}
                             """)
@@ -857,7 +859,7 @@ if uploaded_file:
                             }
 
                             st.write(f"""
-                            Strategie č. {result['sequence']}  
+                            Strategie č. {result['strategy']}  
                             Váhy: {[round(float(x), 2) for x in result['weights']]}  
                             **Tržní nákup:** {list(result['market_set'])}
                             """)
@@ -898,7 +900,7 @@ if uploaded_file:
                             }
 
                             st.write(f"""
-                            Strategie č. {result['sequence']}  
+                            Strategie č. {result['strategy']}  
                             Váhy: {[round(float(x), 2) for x in result['weights']]}  
                             **Tržní nákup:** {list(result['market_set'])}
                             """)
@@ -997,7 +999,7 @@ if uploaded_file:
                             }
 
                             st.write(f"""
-                            Strategie č. {result['sequence']}  
+                            Strategie č. {result['strategy']}  
                             Váhy: {[round(float(x), 2) for x in result['weights']]}  
                             **Tržní nákup:** {list(result['market_set'])}
                             """)
@@ -1038,7 +1040,7 @@ if uploaded_file:
                             }
 
                             st.write(f"""
-                            Strategie č. {result['sequence']}  
+                            Strategie č. {result['strategy']}  
                             Váhy: {[round(float(x), 2) for x in result['weights']]}  
                             **Tržní nákup:** {list(result['market_set'])}
                             """)
@@ -1136,7 +1138,7 @@ if uploaded_file:
                             }
 
                             st.write(f"""
-                            Strategie č. {result['sequence']}  
+                            Strategie č. {result['strategy']}  
                             Váhy: {[round(float(x), 2) for x in result['weights']]}  
                             **Tržní nákup:** {list(result['market_set'])}
                             """)
@@ -1177,7 +1179,7 @@ if uploaded_file:
                             }
 
                             st.write(f"""
-                            Strategie č. {result['sequence']}  
+                            Strategie č. {result['strategy']}  
                             Váhy: {[round(float(x), 2) for x in result['weights']]}  
                             **Tržní nákup:** {list(result['market_set'])}
                             """)
@@ -1276,7 +1278,7 @@ if uploaded_file:
                             }
 
                             st.write(f"""
-                            Strategie č. {result['sequence']}  
+                            Strategie č. {result['strategy']}  
                             Váhy: {[round(float(x), 2) for x in result['weights']]}  
                             **Tržní nákup:** {list(result['market_set'])}
                             """)
@@ -1317,7 +1319,7 @@ if uploaded_file:
                             }
 
                             st.write(f"""
-                            Strategie č. {result['sequence']}  
+                            Strategie č. {result['strategy']}  
                             Váhy: {[round(float(x), 2) for x in result['weights']]}  
                             **Tržní nákup:** {list(result['market_set'])}
                             """)
